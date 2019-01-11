@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+from youtube_dl_s import ls
 import argparse
 import datetime
 import json
@@ -28,6 +29,16 @@ dl_opts = {
     'json_file': config['YOUTUBR_DL_DATA'] + config['Json_file'],
     'output': config['YOUTUBR_DL_WL'],
     'data': config['YOUTUBR_DL_DATA'],
+}
+
+ydl_opts = {
+    'mark_watched': True,
+    'cookiefile': f"{dl_opts['data']}/cookies2.txt",
+    'ignoreerrors': True,
+    'writeinfojson': True,
+    'outtmpl': f"{dl_opts['output']}{DATE}/%(id)s/%(id)s.%(ext)s",
+    'download_archive': f"{dl_opts['data']}/archive-WL.txt",
+    'is_live': False,
     'format': config['Format'],
 }
 
@@ -39,6 +50,11 @@ def parse_arguments():
         "--norandom",
         action='store_true',
         help='désactive le random')
+    parser.add_argument(
+        "-rxml",
+        "--refreshxml",
+        action='store_true',
+        help='forces the refresh')
     parser.add_argument(
         "-v",
         "--verbose",
@@ -65,7 +81,6 @@ def diffFunc():
 
     if fichier != cur_files:
         logging.info("[rss]")
-        from youtube_dl_s import ls
         ls.rss(rss_opts)
         dif = difflib.unified_diff(
             fichier.splitlines(),
@@ -110,8 +125,9 @@ def rmFunc():
 
 def youtube_dlFunc():
     from youtube_dl_s import downloaders
-    dl_opts['watchlater'] = True
-    downloaders.YoutubeDLDownloader(dl_opts)
+    downloaders.YoutubeDLDownloader(ydl_opts, downloaders.feedparser1(dl_opts))
+    if config['watchlater'] is True:
+        downloaders.YoutubeDLWatchlater(ydl_opts)
     rmFunc()
 
 
@@ -168,6 +184,7 @@ def timeFunc():
 
 def main():
     args = parse_arguments()
+
     # verbose
     if args.verbose:
         logging.basicConfig(
@@ -179,6 +196,12 @@ def main():
             format='%(asctime)s %(message)s',
             filename=config['logfile'],
             level=logging.INFO)
+
+    # refreshxml
+    if args.refreshxml:
+        logging.info("[rss] refresh")
+        ls.rss(rss_opts)
+
     # random
     if args.norandom:
         AFunc()
