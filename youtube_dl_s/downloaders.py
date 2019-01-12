@@ -29,14 +29,14 @@ def feedparser1(dl_opts):
         data = json.load(target)
 
     videos = []
-    max_videos = False
+    max_videos = True
     for name in data["outline"]:
-        update = datetime.strptime(name["update"], "%Y-%m-%d %H:%M:%S")
-        #
-        update_interval = timedelta(seconds=-name["update_interval"])
-        update_interval = update_interval + datetime_now
+        if max_videos:  # arrêter
+            update = datetime.strptime(name["update"], "%Y-%m-%d %H:%M:%S")
+            #
+            update_interval = timedelta(seconds=-name["update_interval"])
+            update_interval = update_interval + datetime_now
 
-        if max_videos is False:  # arrêter
             if update_interval > update:
                 xmlUrl = name["xmlUrl"]
                 logging.debug('[dl] ' + xmlUrl)
@@ -45,21 +45,21 @@ def feedparser1(dl_opts):
                 len_feed = len(feed['items'])
 
                 for j in range(0, len_feed):
-                    timef = feed['items'][j]['published_parsed']
-                    dt = datetime.fromtimestamp(mktime(timef))
-                    logging.debug(
-                        f"[dl]   {str(dt)} {feed['items'][j]['link']}")
-                    if dt > update:
-                        if max_videos is False:  # arrêter
+                    if max_videos:  # arrêter
+                        timef = feed['items'][j]['published_parsed']
+                        dt = datetime.fromtimestamp(mktime(timef))
+                        logging.debug(f"[dl]   {str(dt)} {feed['items'][j]['link']}")
+                        if dt > update:
                             videos.append(feed['items'][j]['link'])
                             logging.debug(
                                 '[dl]    ajout de la vidéo ci-dessus')
                             if len(videos) >= 15:
-                                max_videos = True
-                # update time
-                with open(dl_opts['json_file'], 'w') as target:
+                                max_videos = False
+                if max_videos:
                     name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
-                    json.dump(data, target, indent=2)
+
+    with open(dl_opts['json_file'], 'w') as target:
+        json.dump(data, target, indent=2)
     return videos
 
 
