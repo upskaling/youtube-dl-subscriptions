@@ -19,14 +19,14 @@ with open(config, 'r', encoding='utf-8') as target:
     config = json.load(target)
 
 rss_opts = {
-    'outtmpl': config['Outtmpl'],
-    'data': config['YOUTUBR_DL_WL'],
-    'title': config['Title'],
-    'URL': config['Url']
+    'out_xml': config['out_xml'],
+    'output': config['YOUTUBR_DL_WL'],
+    'title': config['title'],
+    'URL': config['URL']
 }
 
 dl_opts = {
-    'json_file': config['YOUTUBR_DL_DATA'] + config['Json_file'],
+    'json_file': config['YOUTUBR_DL_DATA'] + config['json_file'],
     'output': config['YOUTUBR_DL_WL'],
     'data': config['YOUTUBR_DL_DATA'],
 }
@@ -39,7 +39,7 @@ ydl_opts = {
     'outtmpl': f"{dl_opts['output']}{DATE}/%(id)s/%(id)s.%(ext)s",
     'download_archive': f"{dl_opts['data']}/archive-WL.txt",
     'is_live': False,
-    'format': config['Format'],
+    'format': config['format'],
 }
 
 
@@ -51,9 +51,8 @@ def parse_arguments():
         action='store_true',
         help='désactive le random')
     parser.add_argument(
-        "-rxml",
-        "--refreshxml",
-        action='store_true',
+        "--refresh-xml",
+        action='store_true', dest='refresh_xml',
         help='forces the refresh')
     parser.add_argument(
         "-v",
@@ -91,8 +90,6 @@ def diffFunc():
         with open(FILELIST, "w", encoding='utf-8') as fichier:
             fichier.write(cur_files)
 
-    logging.info("[fin] " + DATE1)
-
 
 def rmFunc():
     # https://stackoverflow.com/questions/185936/how-to-delete-the-contents-of-a-folder-in-python
@@ -120,15 +117,13 @@ def rmFunc():
             logging.error(e)
 
     logging.info("[supprimer] ok")
-    diffFunc()
 
 
 def youtube_dlFunc():
     from youtube_dl_s import downloaders
     downloaders.YoutubeDLDownloader(ydl_opts, downloaders.feedparser1(dl_opts))
-    if config['watchlater'] is True:
+    if config['watchlater']:
         downloaders.YoutubeDLWatchlater(ydl_opts)
-    rmFunc()
 
 
 def test_youtube():
@@ -142,16 +137,15 @@ def test_youtube():
             s.connect((host, port))
             s.shutdown(2)
             logging.info("[connect] Success connecting to " + host)
-            youtube_dlFunc()
+            return True
         except socket.error as e:
             logging.error("[connect] Cannot connect to " + host)
             logging.error(e)
         finally:
             s.close()
-    pass
 
 
-def AFunc():
+def get_lock():
     # https://stackoverflow.com/questions/788411/check-to-see-if-python-script-is-running/7758075#7758075
 
     with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as _lock_socket:
@@ -161,8 +155,6 @@ def AFunc():
             logging.error('[lock] exists')
             logging.error(e)
             exit(0)
-        test_youtube()
-        pass
 
 
 def timeFunc():
@@ -179,7 +171,6 @@ def timeFunc():
     logging.info("[sleep] dans " + number1)
     time.sleep(number)
     logging.debug("[sleep] ok")
-    AFunc()
 
 
 def main():
@@ -198,15 +189,20 @@ def main():
             level=logging.INFO)
 
     # refreshxml
-    if args.refreshxml:
+    if args.refresh_xml:
         logging.info("[rss] refresh")
         ls.rss(rss_opts)
 
     # random
-    if args.norandom:
-        AFunc()
-    else:
+    if not args.norandom:
         timeFunc()
+
+    get_lock()
+    if test_youtube():
+        youtube_dlFunc()
+        rmFunc()
+        diffFunc()
+        logging.info("[fin] " + DATE1)
 
 
 if __name__ == '__main__':

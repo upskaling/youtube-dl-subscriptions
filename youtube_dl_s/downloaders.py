@@ -59,7 +59,7 @@ def feedparser1(dl_opts):
                 # update time
                 with open(dl_opts['json_file'], 'w') as target:
                     name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
-                    json.dump(data, target, indent=4)
+                    json.dump(data, target, indent=2)
     return videos
 
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     dl_opts = {
         'json_file': './data/feeds.json',
         'output': './data/watchlater/',
-        'data': './data',
+        'data': './data'
     }
 
     ydl_opts = {
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         'outtmpl': f"{dl_opts['output']}{DATE}/%(id)s/%(id)s.%(ext)s",
         'download_archive': f"{dl_opts['data']}/archive-WL.txt",
         'is_live': False,
-        'format': '[height<=?720][ext=mp4]/best',
+        'format': '[height<=?720][ext=mp4]/best'
     }
 
     YoutubeDLDownloader(ydl_opts, feedparser1(dl_opts))

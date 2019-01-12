@@ -6,20 +6,11 @@ import mimetypes
 import os
 import logging
 from time import gmtime, strftime, localtime, ctime
-
 from xml.dom import minidom
-# from PIL import Image
-# from PIL.ExifTags import TAGS
-# from xml.dom.minidom import Node
 
 DATE = strftime("%a, %d %b %Y %H:%M:%S +0200", localtime())
-# print(DATE)
-
-# ---------------------------
-
 
 def rejson(arg):
-    # ~print(arg)
 
     rejson = {}
     with open(arg) as json_file:
@@ -54,7 +45,7 @@ def rss(rss_opts):
     channel.appendChild(title)
 
     link = doc.createElement('link')
-    text = doc.createTextNode(rss_opts['URL'] + rss_opts['outtmpl'])
+    text = doc.createTextNode(rss_opts['URL'] + rss_opts['out_xml'])
     link.appendChild(text)
     channel.appendChild(link)
 
@@ -68,16 +59,12 @@ def rss(rss_opts):
     lastBuildDate.appendChild(text)
     channel.appendChild(lastBuildDate)
 
-    LS = glob.glob(rss_opts['data'] + "/*/*/*.info.json")
-
-    # print(sorted(LS))
-    # ~print(len(LS))
+    LS = glob.glob(rss_opts['output'] + "/*/*/*.info.json")
 
     for name in sorted(LS):
-        # ~if '.info.json' in name[-10:]:
         LSbasename = os.path.basename(name)  # id + .info.json
         LSdirname = os.path.dirname(name).replace(
-            rss_opts['data'], "")  # fichier parents
+            rss_opts['output'], "")  # fichier parents
         name_mp4 = name.replace('.info.json', '.mp4')
 
         exists = os.path.isfile(name_mp4)
@@ -96,9 +83,6 @@ def rss(rss_opts):
             LSbasename = os.path.basename(name)  # id + .mp4
             LSgetctime = ''
 
-        # ~print(name)
-        # ~print(os.path.dirname(name))
-        # ~print(LSbasename)
         # -----------------------------
         jsonb = rejson(name)
 
@@ -159,19 +143,16 @@ def rss(rss_opts):
 
         channel.appendChild(item)
 
-    with open(rss_opts['data'] + rss_opts['outtmpl'], "w", encoding='utf-8') as fichier:
+    with open(rss_opts['output'] + rss_opts['out_xml'], "w", encoding='utf-8') as fichier:
         xml_str = doc.toprettyxml(indent="  ")
         fichier.write(xml_str)
         pass
 
-# print(LSexiftool)
-# print(":: type",type(LSexiftool))
-
 
 if __name__ == "__main__":
     rss_opts = {
-        'outtmpl': 'index.xml',
-        'data': './data/watchlater/',
+        'out_xml': 'index.xml',
+        'output': './data/watchlater/',
         'title': 'watchlater',
         'URL': '<URL>'
     }
