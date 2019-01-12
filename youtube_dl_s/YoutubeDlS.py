@@ -51,6 +51,10 @@ def parse_arguments():
         action='store_true',
         help='désactive le random')
     parser.add_argument(
+        "--skip-download",
+        action='store_true', dest='skip_download',
+        help='Do not download the video')
+    parser.add_argument(
         "--refresh-xml",
         action='store_true', dest='refresh_xml',
         help='forces the refresh')
@@ -196,6 +200,9 @@ def main():
     # random
     if not args.norandom:
         timeFunc()
+
+    if args.skip_download:
+        ydl_opts['skip_download'] = True
 
     get_lock()
     if test_youtube():
