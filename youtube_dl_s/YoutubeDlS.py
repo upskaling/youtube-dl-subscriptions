@@ -29,6 +29,7 @@ dl_opts = {
     'json_file': config['YOUTUBR_DL_DATA'] + config['json_file'],
     'output': config['YOUTUBR_DL_WL'],
     'data': config['YOUTUBR_DL_DATA'],
+    'limit': config['limit']
 }
 
 ydl_opts = {

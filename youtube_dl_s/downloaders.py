@@ -53,8 +53,9 @@ def feedparser1(dl_opts):
                             videos.append(feed['items'][j]['link'])
                             logging.debug(
                                 '[dl]    ajout de la vidéo ci-dessus')
-                            if len(videos) >= 15:
-                                max_videos = False
+                            if dl_opts['limit']:
+                                if len(videos) >= dl_opts['limit']:
+                                    max_videos = False
                 if max_videos:
                     name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -86,7 +87,8 @@ if __name__ == "__main__":
     dl_opts = {
         'json_file': './data/feeds.json',
         'output': './data/watchlater/',
-        'data': './data'
+        'data': './data',
+        'limit': 15
     }
 
     ydl_opts = {
