@@ -5,6 +5,7 @@ import json
 import mimetypes
 import os
 import logging
+from shutil import copy
 from time import gmtime, strftime, localtime, ctime
 from xml.dom import minidom
 
@@ -180,10 +181,10 @@ def rss(rss_opts):
         if jpg_gg:
             jsonb['thumbnail'] = jpg_gg[0].replace(rss_opts['output'], "")
 
-        if jsonb['thumbnail'] == 'None':
+        if jsonb['thumbnail'] is None:
             poster = ''
         else:
-            poster = f"poster=\"{jsonb['thumbnail']}\""
+            poster = f"poster=\"{rss_opts['URL']}/{jsonb['thumbnail']}\""
 
         fe = fg.add_entry()
         fe.title(jsonb['title'])
@@ -191,13 +192,15 @@ def rss(rss_opts):
         fe.guid(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         fe.description(
             f"""<video width="100%" preload="metadata" controls {poster}>
-        <source src="{rss_opts['URL']}{LSdirname}/{LSbasename}" type="{LSmimetypes}">
+        <source src="{rss_opts['URL']}{LSdirname}/{LSbasename}" """
+            f"""type="{LSmimetypes}">
         Votre navigateur ne permet pas de lire les vidéos HTML5.
         </video><br>
-        <a title="{jsonb['title']}" href="{jsonb['webpage_url']}">{jsonb['title']}</a><br>
+        <a title="{jsonb['title']}" href="{jsonb['webpage_url']}">"""
+            f"""{jsonb['title']}</a><br>
         <p>{jsonb['view_count']} vues</p>
         <hr>
-        <a href="{jsonb['uploader_url']}">{jsonb['uploader']}</a>
+        <a href="{jsonb['uploader_url']}" rel="author">{jsonb['uploader']}</a>
         <p>{jsonb['json_description']}</p>""")
         fe.pubDate(LSgetctime)
         fe.enclosure(
@@ -207,17 +210,100 @@ def rss(rss_opts):
         fe.author(jsonb['uploader'])
         fe.category(jsonb['tags'])
 
-    with open(rss_opts['output'] + rss_opts['out_xml'], "w", encoding='utf-8') as fichier:
+    with open(rss_opts['output'] + rss_opts['out_xml'], "w",
+              encoding='utf-8') as fichier:
         fichier.write(fg.m1())
         pass
 
 
+def html(rss_opts):
+    logger.info("[html] refresh")
+    with open(rss_opts['in_html'], 'r', encoding='utf-8') as fichier:
+        index_html = fichier.read()
+
+    ps = list()
+    for date in glob.glob(rss_opts['output'] + "/*/"):
+        dirname = os.path.dirname(date).replace(rss_opts['output'], "")
+
+        if dirname == "trash":
+            continue
+
+        ps.append(
+            f"""<!-- {dirname} -->
+    <h3 class="window-subtitle" >{dirname}</h3>
+    <div class=pure-g>""")
+
+        for name in glob.glob(date + "*/"):
+
+            jsonb = glob.glob(name + '*.info.json')
+
+            if not jsonb:
+                continue
+
+            jsonb = rejson(jsonb[0])
+            LSdirname = os.path.dirname(name).replace(
+                rss_opts['output'], "")  # fichier parents
+
+            if jsonb['duration'] >= 3600:
+                jsonb['duration'] = strftime(
+                    "%H:%M:%S", gmtime(jsonb['duration']))
+            else:
+                jsonb['duration'] = strftime(
+                    "%M:%S", gmtime(jsonb['duration']))
+
+            if os.path.isfile(jsonb['_filename']):
+                LSbasename = os.path.basename(jsonb['_filename'])  # id + .mp4
+            else:
+                LSbasename = os.path.basename(name)  # id + .mp4
+
+            jpg_gg = glob.glob(name + '*.jpg')
+            if jpg_gg:
+                jsonb['thumbnail'] = jpg_gg[0].replace(rss_opts['output'], "")
+
+            if jsonb['thumbnail'] is None:
+                poster = ''
+            else:
+                poster = f'''<img id="img" class="lazyload thumbnail" ''' \
+                    f'''data-src="{jsonb['thumbnail']}" width="210">'''
+
+            ps.append(f'''    <my-video-miniature>
+        <div class="video-miniature">
+            <a href="{LSdirname}/{LSbasename}">
+                <div class="thumbnail">{poster}
+                    <p class="length">{jsonb['duration']}</p>
+                </div>
+            </a>
+            <p>{jsonb['title']}</p>
+            <a href="{jsonb['uploader_url']}" rel="author">
+                <b>{jsonb['uploader']}</b></a>
+            <p style="text-align:right">{jsonb['view_count']} vues</p>
+        </div>
+    </my-video-miniature>''')
+            pass
+
+        ps.append("</div>")
+        pass
+
+    pss = '\n'.join(ps)
+    with open(rss_opts['output'] + rss_opts['out_html'], 'w', encoding='utf-8'
+              ) as fichier:
+        fichier.write(index_html.format(video=pss, title=rss_opts['title']))
+
+    output = os.path.abspath(rss_opts['output'])
+    copy('./templates/style.css', output)
+    copy('./templates/stat.js', output)
+    copy('./templates/favicon.png', output)
+
+
 if __name__ == "__main__":
     rss_opts = {
-        'out_xml': 'index.xml',
+        'in_html': './templates/index.html',
+        'out_html': 'index.html',
         'output': './data/watchlater/',
+        'out_xml': 'index.xml',
         'title': 'watchlater',
         'URL': '<URL>'
     }
 
     rss(rss_opts)
+    html(rss_opts)

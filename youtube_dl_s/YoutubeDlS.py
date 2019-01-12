@@ -113,7 +113,7 @@ def diffFunc():
         logger.info("[rss]")
         ls.rss(config['rss_opts'])
         if config['html']:
-            logging.info("[html]")
+            logger.info("[html]")
             ls.html(config['rss_opts'])
         dif = difflib.unified_diff(
             fichier.splitlines(),

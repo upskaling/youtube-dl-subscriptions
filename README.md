@@ -7,6 +7,7 @@
 {
   "errorsfile": "./data/errorsfile.json",
   "errorspass": 10,
+  "html": true,
   "logfile": "./data/ytwatchlater.log",
   "max_downloads": 15,
   "watchlater": false,
