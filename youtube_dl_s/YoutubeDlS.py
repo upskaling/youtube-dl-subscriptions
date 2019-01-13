@@ -18,30 +18,12 @@ config = pathlib.Path.home() / '.config/youtube-dl-s/youtube_dl_s.json'
 with open(config, 'r', encoding='utf-8') as target:
     config = json.load(target)
 
-rss_opts = {
-    'out_xml': config['out_xml'],
-    'output': config['YOUTUBR_DL_WL'],
-    'title': config['title'],
-    'URL': config['URL']
-}
+config['rss_opts']['output'] = config['YOUTUBR_DL_WL']
 
-dl_opts = {
-    'json_file': config['YOUTUBR_DL_DATA'] + config['json_file'],
-    'output': config['YOUTUBR_DL_WL'],
-    'data': config['YOUTUBR_DL_DATA'],
-    'limit': config['limit']
-}
+config['dl_opts']['output'] = config['YOUTUBR_DL_WL']
+config['dl_opts']['data'] = config['YOUTUBR_DL_DATA']
 
-ydl_opts = {
-    'mark_watched': True,
-    'cookiefile': f"{dl_opts['data']}/cookies2.txt",
-    'ignoreerrors': True,
-    'writeinfojson': True,
-    'outtmpl': f"{dl_opts['output']}{DATE}/%(id)s/%(id)s.%(ext)s",
-    'download_archive': f"{dl_opts['data']}/archive-WL.txt",
-    'is_live': False,
-    'format': config['format'],
-}
+config['ydl_opts']['outtmpl'] = f"{config['YOUTUBR_DL_WL']}{DATE}/%(id)s/%(id)s.%(ext)s"
 
 
 def parse_arguments():
@@ -85,7 +67,7 @@ def diffFunc():
 
     if fichier != cur_files:
         logging.info("[rss]")
-        ls.rss(rss_opts)
+        ls.rss(config['rss_opts'])
         dif = difflib.unified_diff(
             fichier.splitlines(),
             cur_files.splitlines(),
@@ -126,9 +108,9 @@ def rmFunc():
 
 def youtube_dlFunc():
     from youtube_dl_s import downloaders
-    downloaders.YoutubeDLDownloader(ydl_opts, downloaders.feedparser1(dl_opts))
+    downloaders.YoutubeDLDownloader(config['ydl_opts'], downloaders.feedparser1(config['dl_opts']))
     if config['watchlater']:
-        downloaders.YoutubeDLWatchlater(ydl_opts)
+        downloaders.YoutubeDLWatchlater(config['ydl_opts'])
 
 
 def test_youtube():
@@ -172,8 +154,7 @@ def timeFunc():
     number = random.randint(MIN, MAX)
     number1 = str(datetime.timedelta(seconds=number))
 
-    logging.info("--------------------------------")
-    logging.info("[sleep] dans " + number1)
+    logging.info(f"[sleep] dans {str_number}")
     time.sleep(number)
     logging.debug("[sleep] ok")
 
@@ -196,14 +177,14 @@ def main():
     # refreshxml
     if args.refresh_xml:
         logging.info("[rss] refresh")
-        ls.rss(rss_opts)
+        ls.rss(config['rss_opts'])
 
     # random
     if not args.norandom:
         timeFunc()
 
     if args.skip_download:
-        ydl_opts['skip_download'] = True
+        config['ydl_opts']['skip_download'] = True
 
     get_lock()
     if test_youtube():
