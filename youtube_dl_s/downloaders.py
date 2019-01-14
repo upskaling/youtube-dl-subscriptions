@@ -29,35 +29,50 @@ def feedparser1(dl_opts):
         data = json.load(target)
 
     videos = []
-    max_videos = True
+    max_videos = False
     for name in data["outline"]:
-        if max_videos:  # arrêter
-            update = datetime.strptime(name["update"], "%Y-%m-%d %H:%M:%S")
-            #
-            update_interval = timedelta(seconds=-name["update_interval"])
-            update_interval = update_interval + datetime_now
+        if max_videos:  # arrête
+            continue
 
-            if update_interval > update:
-                xmlUrl = name["xmlUrl"]
-                logging.debug('[dl] ' + xmlUrl)
+        update = datetime.strptime(name["update"], "%Y-%m-%d %H:%M:%S")
+        timeToLiveSeconds = timedelta(seconds=name["update_interval"])
+        age = datetime_now - update
+        if age <= timeToLiveSeconds:
+            continue
 
-                feed = feedparser.parse(xmlUrl)
-                len_feed = len(feed['items'])
+        etag = name.get('etag')
+        modified = name.get('modified')
 
-                for j in range(0, len_feed):
-                    if max_videos:  # arrêter
-                        timef = feed['items'][j]['published_parsed']
-                        dt = datetime.fromtimestamp(mktime(timef))
-                        logging.debug(f"[dl]   {str(dt)} {feed['items'][j]['link']}")
-                        if dt > update:
-                            videos.append(feed['items'][j]['link'])
-                            logging.debug(
-                                '[dl]    ajout de la vidéo ci-dessus')
-                            if dl_opts['limit']:
-                                if len(videos) >= dl_opts['limit']:
-                                    max_videos = False
-                if max_videos:
-                    name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
+        xmlUrl = name["xmlUrl"]
+        logging.debug('[dl] ' + xmlUrl)
+
+        feed = feedparser.parse(xmlUrl, etag=etag, modified=modified)
+
+        if feed.get('etag'):
+            name["etag"] = feed['etag']
+
+        if feed.get('modified'):
+            name["modified"] = feed['modified']
+
+        name["status"] = feed['status']
+
+        len_feed = range(0, len(feed['items']))
+        for j in len_feed:
+            if max_videos:  # arrêter
+                continue
+
+            timef = feed['items'][j]['published_parsed']
+            dt = datetime.fromtimestamp(mktime(timef))
+            logging.debug(f"[dl]   {str(dt)} {feed['items'][j]['link']}")
+            if dt > update:
+                videos.append(feed['items'][j]['link'])
+                logging.debug('[dl]    ajout de la vidéo ci-dessus')
+                if dl_opts['limit']:
+                    if len(videos) >= dl_opts['limit']:
+                        max_videos = True
+
+        if not max_videos:
+            name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
 
     with open(dl_opts['json_file'], 'w') as target:
         json.dump(data, target, indent=2)
@@ -84,6 +99,8 @@ def YoutubeDLWatchlater(ydl_opts):
 
 
 if __name__ == "__main__":
+    DATE = datetime.now().strftime('%Y-%m-%d')
+
     dl_opts = {
         'json_file': './data/feeds.json',
         'output': './data/watchlater/',
@@ -102,4 +119,5 @@ if __name__ == "__main__":
         'format': '[height<=?720][ext=mp4]/best'
     }
 
-    YoutubeDLDownloader(ydl_opts, feedparser1(dl_opts))
+    # ~YoutubeDLDownloader(ydl_opts, feedparser1(dl_opts))
+    print(feedparser1(dl_opts))
