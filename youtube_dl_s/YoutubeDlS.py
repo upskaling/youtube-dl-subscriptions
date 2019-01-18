@@ -108,7 +108,11 @@ def rmFunc():
 
 def youtube_dlFunc():
     from youtube_dl_s import downloaders
-    downloaders.YoutubeDLDownloader(config['ydl_opts'], downloaders.feedparser1(config['dl_opts']))
+
+    feedurl = downloaders.feedparser1(config['dl_opts'])
+    if feedurl:
+        downloaders.YoutubeDLDownloader(config['ydl_opts'], feedurl)
+
     if config['watchlater']:
         downloaders.YoutubeDLWatchlater(config['ydl_opts'])
 
