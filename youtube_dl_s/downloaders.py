@@ -54,7 +54,10 @@ def feedparser1(dl_opts):
         if feed.get('modified'):
             name["modified"] = feed['modified']
 
-        name["status"] = feed['status']
+        try:
+            name["status"] = feed['status']
+        except KeyError:
+            name["status"] = 0
 
         len_feed = range(0, len(feed['items']))
         for j in len_feed:
