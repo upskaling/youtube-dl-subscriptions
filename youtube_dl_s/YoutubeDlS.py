@@ -114,7 +114,9 @@ def youtube_dlFunc():
         downloaders.YoutubeDLDownloader(config['ydl_opts'], feedurl)
 
     if config['watchlater']:
-        downloaders.YoutubeDLWatchlater(config['ydl_opts'])
+        downloaders.YoutubeDLDownloader(
+            config['ydl_opts'],
+            ['https://www.youtube.com/playlist?list=WL'])
 
 
 def test_youtube():

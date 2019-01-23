@@ -93,14 +93,6 @@ def YoutubeDLDownloader(ydl_opts, url=[]):
             ydl.download(url)
 
 
-def YoutubeDLWatchlater(ydl_opts):
-    watchlater = ['https://www.youtube.com/playlist?list=WL']
-    logging.info("[dl] watchlater")
-    ydl_opts['logger'] = MyLogger()
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        ydl.download(watchlater)
-
-
 if __name__ == "__main__":
     DATE = datetime.now().strftime('%Y-%m-%d')
 
