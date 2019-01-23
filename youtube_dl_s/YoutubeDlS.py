@@ -128,12 +128,10 @@ def test_youtube():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.connect((host, port))
-            s.shutdown(2)
-            logging.info("[connect] Success connecting to " + host)
+            logging.info(f"[connect] Success connecting to {host}")
             return True
-        except socket.error as e:
-            logging.error("[connect] Cannot connect to " + host)
-            logging.error(e)
+        except Exception as e:
+            logging.error(f"[connect] Cannot connect to {host} Exception is {e}")
         finally:
             s.close()
 
