@@ -11,22 +11,13 @@ for i in range(0,len(outline[0])):
     urls.append(outline[0][i].xmlUrl)
     title.append(outline[0][i].title)
 
-# ~print(title[1])
-# ~print(urls[1])
-
-json_file = "./feeds.json"
+json_file = "feeds.json"
 
 datetime_now = datetime.now()
 update_interval = timedelta(seconds=-60)
 
-# ~with open(json_file, 'r') as target:
-    # ~data = json.load(target)
-
 data = {}
 data["outline"] = []
-# ~data["outline"] = []
-# ~data["outline"][1]["xmlUrl"] = urls[1]
-# ~print(data3)
 
 for i in range(0,len(urls)):
     datetime_now = update_interval + datetime_now
@@ -40,9 +31,4 @@ for i in range(0,len(urls)):
 
 
 with open(json_file, 'w', encoding='utf-8') as target:
-    json_data = json.dumps(data, indent=4)
-    json.dump(data, target, indent=4)
-    # ~print(json_data)
-
-# ~print(urls)
-print("::: ok")
+    json.dump(data, target, indent=2)
