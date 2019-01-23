@@ -138,16 +138,16 @@ def test_youtube():
             s.close()
 
 
-def get_lock():
+def get_lock(process_name):
     # https://stackoverflow.com/questions/788411/check-to-see-if-python-script-is-running/7758075#7758075
 
-    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as _lock_socket:
-        try:
-            _lock_socket.bind('\0' + "watchlater")
-        except Exception as e:
-            logging.error('[lock] exists')
-            logging.error(e)
-            exit(0)
+    get_lock._lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+
+    try:
+        get_lock._lock_socket.bind('\0' + process_name)
+    except Exception as e:
+        logging.error(f'[lock] {e}')
+        exit(0)
 
 
 def timeFunc():
@@ -192,7 +192,7 @@ def main():
     if args.skip_download:
         config['ydl_opts']['skip_download'] = True
 
-    get_lock()
+    get_lock('youtube-dl-subscriptions')
     if test_youtube():
         youtube_dlFunc()
         rmFunc()
