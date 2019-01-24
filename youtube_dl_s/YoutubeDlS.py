@@ -190,15 +190,12 @@ def get_lock(process_name):
         exit(0)
 
 
-def timeFunc():
+def timeFunc(random_sleep):
     import random
     import time
 
-    MIN = 1
-    MAX = 3420
-
-    number = random.randint(MIN, MAX)
-    number1 = str(datetime.timedelta(seconds=number))
+    number = random.randint(0, random_sleep)
+    str_number = str(datetime.timedelta(seconds=number))
 
     logging.info(f"[sleep] dans {str_number}")
     time.sleep(number)
@@ -227,7 +224,7 @@ def main():
 
     # random
     if not args.norandom:
-        timeFunc()
+        timeFunc(config.get('random_sleep', 0))
 
     if args.skip_download:
         config['ydl_opts']['skip_download'] = True
