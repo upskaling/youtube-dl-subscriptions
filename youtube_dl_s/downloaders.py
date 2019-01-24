@@ -82,15 +82,22 @@ def feedparser1(dl_opts):
     return videos
 
 
-def YoutubeDLDownloader(ydl_opts, url=[]):
-    len_videos = len(url)
-    if len_videos == 0:
+def YoutubeDLDownloader(ydl_opts, links=[]):
+    len_links = len(links)
+    if len_links == 0:
         logging.info('[dl] Sorry, no new video found')
-    else:
-        logging.info('[dl] ' + str(len_videos) + ' new videos found')
-        ydl_opts['logger'] = MyLogger()
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download(url)
+        return
+
+    logging.info(f"[dl] {str(len_links)} new videos found")
+    ydl_opts['logger'] = MyLogger()
+    errors = []
+    for url in links:
+        try:
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+        except Exception as e:
+            errors += [url]
+    return errors
 
 
 if __name__ == "__main__":

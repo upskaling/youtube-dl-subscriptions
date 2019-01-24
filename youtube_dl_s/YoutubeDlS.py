@@ -109,9 +109,50 @@ def rmFunc():
 def youtube_dlFunc():
     from youtube_dl_s import downloaders
 
+    def removeDuplicates(data):
+        h = []
+        result = []
+        for i in data:
+            if i['url'] not in h:
+                h += [i['url']]
+                result += [i]
+        return result
+
+    with open(config['errorsfile'], 'r') as target:
+        try:
+            errorslines = json.load(target)
+        except json.decoder.JSONDecodeError:
+            errorslines = []
+
     feedurl = downloaders.feedparser1(config['dl_opts'])
     if feedurl:
-        downloaders.YoutubeDLDownloader(config['ydl_opts'], feedurl)
+        listurl = []
+        for i in feedurl:
+            data1 = {}
+            data1['url'] = i
+            data1['update'] = DATE1
+            data1['pass'] = 0
+            listurl += [data1]
+    else:
+        listurl = []
+
+    listurl += errorslines
+    listurl = removeDuplicates(listurl)
+
+    md = 0
+    for i in listurl:
+        if i['pass'] >= config['errorspass']:
+            i['pass'] += 1
+            continue
+        md += 1
+        if md <= config['max_downloads']:
+            if downloaders.YoutubeDLDownloader(config['ydl_opts'], [i['url']]):
+                i['pass'] += 1
+            else:
+                listurl.remove(i)
+
+    with open(config['errorsfile'], 'w') as target:
+        json.dump(listurl, target, indent=2)
 
     if config['watchlater']:
         downloaders.YoutubeDLDownloader(
@@ -131,7 +172,8 @@ def test_youtube():
             logging.info(f"[connect] Success connecting to {host}")
             return True
         except Exception as e:
-            logging.error(f"[connect] Cannot connect to {host} Exception is {e}")
+            logging.error(
+                f"[connect] Cannot connect to {host} Exception is {e}")
         finally:
             s.close()
 
