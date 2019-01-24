@@ -29,11 +29,7 @@ def feedparser1(dl_opts):
         data = json.load(target)
 
     videos = []
-    max_videos = False
     for name in data["outline"]:
-        if max_videos:  # arrête
-            continue
-
         update = datetime.strptime(name["update"], "%Y-%m-%d %H:%M:%S")
         timeToLiveSeconds = timedelta(seconds=name["update_interval"])
         age = datetime_now - update
@@ -61,21 +57,14 @@ def feedparser1(dl_opts):
 
         len_feed = range(0, len(feed['items']))
         for j in len_feed:
-            if max_videos:  # arrêter
-                continue
-
             timef = feed['items'][j]['published_parsed']
             dt = datetime.fromtimestamp(mktime(timef))
             logging.debug(f"[dl]   {str(dt)} {feed['items'][j]['link']}")
             if dt > update:
                 videos.append(feed['items'][j]['link'])
                 logging.debug('[dl]    ajout de la vidéo ci-dessus')
-                if dl_opts['limit']:
-                    if len(videos) >= dl_opts['limit']:
-                        max_videos = True
 
-        if not max_videos:
-            name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
+        name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
 
     with open(dl_opts['json_file'], 'w') as target:
         json.dump(data, target, indent=2)
