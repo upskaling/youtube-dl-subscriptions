@@ -5,6 +5,7 @@ import argparse
 import datetime
 import json
 import logging
+import os
 import pathlib
 import socket
 
@@ -33,6 +34,10 @@ def parse_arguments():
         "--norandom",
         action='store_true',
         help='désactive le random')
+    parser.add_argument(
+        "--purge",
+        action='store_true',
+        help='purge')
     parser.add_argument(
         "--skip-download",
         action='store_true', dest='skip_download',
@@ -78,9 +83,30 @@ def diffFunc():
             fichier.write(cur_files)
 
 
+def getsize(path):
+    fichier = []
+    for root, dirs, files in os.walk(path):
+        for i in files:
+            fichier.append(os.path.join(root, i))
+    return sum([os.path.getsize(i) for i in fichier])
+
+
+def purge(path):
+    for video in pathlib.Path(path).glob('*'):
+
+        head, tail = os.path.split(video)
+        if tail in ['index.xml']:
+            continue
+
+        modified_time = now - datetime.datetime.utcfromtimestamp(os.path.getmtime(video))
+        if modified_time > datetime.timedelta(days=config['YOUTUBR_DL_WL_purge_days']):
+            print(f'{modified_time} Removing: {str(video)}')
+            os.rename(video, pathlib.Path(config['YOUTUBR_DL_WL'], "trash/", os.path.basename(video)))
+            # video.unlink()
+
+
 def rmFunc():
     # https://stackoverflow.com/questions/185936/how-to-delete-the-contents-of-a-folder-in-python
-    import os
     import shutil
 
     folder = config['YOUTUBR_DL_WL'] + "trash/"
@@ -221,6 +247,14 @@ def main():
     if args.refresh_xml:
         logging.info("[rss] refresh")
         ls.rss(config['rss_opts'])
+
+    # purge
+    if args.purge:
+        rm_opts = config['YOUTUBR_DL_WL']
+        print(getsize(rm_opts))
+        if getsize(rm_opts) > config['YOUTUBR_DL_WL_purge']:
+            purge(rm_opts)
+        return
 
     # random
     if not args.norandom:
