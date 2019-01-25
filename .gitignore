@@ -1,3 +1,7 @@
+# Environments
 env/
+
+zip/
 data/
 youtube_dl_s/__pycache__/
+youtube-dl-s
