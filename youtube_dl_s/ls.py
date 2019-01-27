@@ -67,24 +67,19 @@ def rss(rss_opts):
     lastBuildDate.appendChild(text)
     channel.appendChild(lastBuildDate)
 
-    LS = glob.glob(rss_opts['output'] + "/*/*/*.info.json")
-
-    for name in sorted(LS):
-        LSbasename = os.path.basename(name)  # id + .info.json
-        LSdirname = os.path.dirname(name).replace(
-            rss_opts['output'], "")  # fichier parents
+    for name in glob.iglob(rss_opts['output'] + '/*/*/*.info.json'):
+        LSdirname, LSbasename = os.path.split(name) # id + .info.json
+        LSdirname = LSdirname.replace(rss_opts['output'], '')  # fichier parents
         name_mp4 = name.replace('.info.json', '.mp4')
 
-        exists = os.path.isfile(name_mp4)
-        if exists:
+        if os.path.isfile(name_mp4):
             LSmimetypes = mimetypes.guess_type(name_mp4)[0]  # mimetypes
             LSgetsize = str(os.path.getsize(name_mp4))  # getsize
             LSbasename = os.path.basename(name_mp4)  # id + .mp4
             # date
-            dt = os.path.getmtime(name_mp4)
-            t_str = ctime(dt)
+            LSgetctime = os.path.getmtime(name_mp4)
             LSgetctime = strftime(
-                "%a, %d %b %Y %H:%M:%S %z", localtime(dt))
+                "%a, %d %b %Y %H:%M:%S %z", localtime(LSgetctime))
         else:
             LSmimetypes = ''  # mimetypes
             LSgetsize = ''  # getsize
@@ -100,22 +95,23 @@ def rss(rss_opts):
             poster = f"poster=\"{jsonb['thumbnail']}\""
 
         item = doc.createElement('item')
+        channel.appendChild(item)
 
         title = doc.createElement('title')
         text = doc.createCDATASection(jsonb['json_title'])
         title.appendChild(text)
-        item.appendChild(title.cloneNode(True))
+        item.appendChild(title)
 
         link = doc.createElement('link')
         text = doc.createTextNode(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         link.appendChild(text)
-        item.appendChild(link.cloneNode(True))
+        item.appendChild(link)
 
         guid = doc.createElement('guid')
         text = doc.createTextNode(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         guid.setAttribute('isPermaLink', 'false')
         guid.appendChild(text)
-        item.appendChild(guid.cloneNode(True))
+        item.appendChild(guid)
 
         description = doc.createElement('description')
         description_rv = f"""<video width="100%" preload="metadata" controls {poster}>
@@ -124,35 +120,33 @@ def rss(rss_opts):
         </video><br>
         <a title="{jsonb['json_title']}" href="{jsonb['webpage_url']}">{jsonb['json_title']}</a><br>
         <p>{jsonb['view_count']} vues</p>
+        <hr>
         <a href="{jsonb['uploader_url']}">{jsonb['uploader']}</a>
-        <p><strong>Comment:</strong></p>
         <p>{jsonb['json_description']}</p>"""
         text = doc.createCDATASection(description_rv)
         description.setAttribute('type', 'html')
         description.appendChild(text)
-        item.appendChild(description.cloneNode(True))
+        item.appendChild(description)
 
         pubDate = doc.createElement('pubDate')
         text = doc.createTextNode(LSgetctime)
         pubDate.appendChild(text)
-        item.appendChild(pubDate.cloneNode(True))
+        item.appendChild(pubDate)
 
         enclosure = doc.createElement('enclosure')
         enclosure.setAttribute(
             "url", f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         enclosure.setAttribute("length", LSgetsize)
         enclosure.setAttribute("type", LSmimetypes)
-        item.appendChild(enclosure.cloneNode(True))
+        item.appendChild(enclosure)
 
         author = doc.createElement('author')
         text = doc.createCDATASection(jsonb['uploader'])
         author.appendChild(text)
-        item.appendChild(author.cloneNode(True))
+        item.appendChild(author)
 
-        channel.appendChild(item)
-
+    xml_str = doc.toprettyxml(indent="  ")
     with open(rss_opts['output'] + rss_opts['out_xml'], "w", encoding='utf-8') as fichier:
-        xml_str = doc.toprettyxml(indent="  ")
         fichier.write(xml_str)
         pass
 
