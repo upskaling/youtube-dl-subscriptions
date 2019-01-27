@@ -10,21 +10,29 @@ from xml.dom import minidom
 
 DATE = strftime("%a, %d %b %Y %H:%M:%S +0200", localtime())
 
+
 def rejson(arg):
 
     rejson = {}
     with open(arg) as json_file:
         data = json.load(json_file)
-        rejson['upload_date'] = str(data.get("upload_date", "None"))
-        rejson['json_id'] = str(data.get("id", "None"))
-        rejson['webpage_url'] = str(data.get("webpage_url", "None"))
-        rejson['thumbnail'] = str(data.get("thumbnail", "None"))
-        rejson['json_title'] = str(data.get("title", "None"))
-        rejson['view_count'] = str(data.get("view_count", "None"))
-        rejson['uploader'] = str(data.get("uploader", "None"))
-        rejson['channel_url'] = str(data.get("channel_url", "None"))
-        json_description = str(data.get("description", "None"))
-        rejson['json_description'] = json_description.replace('\n', '<br>')
+
+    rejson['upload_date'] = str(data.get("upload_date", "None"))
+    rejson['json_id'] = str(data.get("id", "None"))
+    rejson['webpage_url'] = str(data.get("webpage_url", "None"))
+    rejson['thumbnail'] = str(data.get("thumbnail", "None"))
+    rejson['json_title'] = str(data.get("title", "None"))
+    rejson['view_count'] = str(data.get("view_count", "None"))
+    rejson['uploader'] = str(data.get("uploader", "None"))
+    rejson['channel_url'] = str(data.get("channel_url", "None"))
+
+    if data.get('uploader_url'):
+        rejson['uploader_url'] = str(data.get("uploader_url", "None"))
+    elif data.get('uploder_url'):
+        rejson['uploader_url'] = str(data.get('uploder_url',"None"))
+
+    json_description = str(data.get("description", "None"))
+    rejson['json_description'] = json_description.replace('\n', '<br>')
 
     return rejson
 
@@ -116,7 +124,7 @@ def rss(rss_opts):
         </video><br>
         <a title="{jsonb['json_title']}" href="{jsonb['webpage_url']}">{jsonb['json_title']}</a><br>
         <p>{jsonb['view_count']} vues</p>
-        <p>{jsonb['uploader']}</p>
+        <a href="{jsonb['uploader_url']}">{jsonb['uploader']}</a>
         <p><strong>Comment:</strong></p>
         <p>{jsonb['json_description']}</p>"""
         text = doc.createCDATASection(description_rv)
