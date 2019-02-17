@@ -25,6 +25,7 @@ def rejson(arg):
     rejson['view_count'] = str(data.get("view_count", "None"))
     rejson['uploader'] = str(data.get("uploader", "None"))
     rejson['channel_url'] = str(data.get("channel_url", "None"))
+    rejson['tags'] = data.get("tags", "None")
 
     if data.get('uploader_url'):
         rejson['uploader_url'] = str(data.get("uploader_url", "None"))
@@ -144,6 +145,12 @@ def rss(rss_opts):
         text = doc.createCDATASection(jsonb['uploader'])
         author.appendChild(text)
         item.appendChild(author)
+
+        for tags in jsonb['tags']:
+            category = doc.createElement('category')
+            text = doc.createCDATASection(tags)
+            category.appendChild(text)
+            item.appendChild(category)
 
     xml_str = doc.toprettyxml(indent="  ")
     with open(rss_opts['output'] + rss_opts['out_xml'], "w", encoding='utf-8') as fichier:
