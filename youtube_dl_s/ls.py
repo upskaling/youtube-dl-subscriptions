@@ -30,7 +30,7 @@ def rejson(arg):
     if data.get('uploader_url'):
         rejson['uploader_url'] = str(data.get("uploader_url", "None"))
     elif data.get('uploder_url'):
-        rejson['uploader_url'] = str(data.get('uploder_url',"None"))
+        rejson['uploader_url'] = str(data.get('uploder_url', "None"))
 
     json_description = str(data.get("description", "None"))
     rejson['json_description'] = json_description.replace('\n', '<br>')
@@ -38,39 +38,127 @@ def rejson(arg):
     return rejson
 
 
+class FeedEntry(object):
+    """ Class doc """
+
+    def __init__(self):
+        """ Class initialiser """
+        self.doc = minidom.Document()
+        self.item = self.doc.createElement('item')
+        pass
+
+    def title(self, title=None):
+        text = self.doc.createCDATASection(title)
+        titleCE = self.doc.createElement('title')
+        titleCE.appendChild(text)
+        self.item.appendChild(titleCE)
+
+    def link(self, link=None):
+        text = self.doc.createTextNode(link)
+        linkCE = self.doc.createElement('link')
+        linkCE.appendChild(text)
+        self.item.appendChild(linkCE)
+
+    def guid(self, guid=None, permalink=False):
+        text = self.doc.createTextNode(guid)
+        guidCE = self.doc.createElement('guid')
+        if permalink:
+            guidCE.setAttribute('isPermaLink', 'trus')
+        else:
+            guidCE.setAttribute('isPermaLink', 'false')
+        guidCE.appendChild(text)
+        self.item.appendChild(guidCE)
+
+    def description(self, description=None):
+        text = self.doc.createCDATASection(description)
+        descriptionCE = self.doc.createElement('description')
+        descriptionCE.setAttribute('type', 'html')
+        descriptionCE.appendChild(text)
+        self.item.appendChild(descriptionCE)
+
+    def pubDate(self, pubDate=None):
+        text = self.doc.createTextNode(pubDate)
+        pubDateCE = self.doc.createElement('pubDate')
+        pubDateCE.appendChild(text)
+        self.item.appendChild(pubDateCE)
+
+    def enclosure(self, url=None, length=None, type=None):
+        enclosureCE = self.doc.createElement('enclosure')
+        enclosureCE.setAttribute("url", url)
+        enclosureCE.setAttribute("length", length)
+        enclosureCE.setAttribute("type", type)
+        self.item.appendChild(enclosureCE)
+
+    def author(self, author=None):
+        text = self.doc.createCDATASection(author)
+        authorCE = self.doc.createElement('author')
+        authorCE.appendChild(text)
+        self.item.appendChild(authorCE)
+
+    def category(self, category=None):
+        for tags in category:
+            text = self.doc.createCDATASection(tags)
+            categoryCE = self.doc.createElement('category')
+            categoryCE.appendChild(text)
+            self.item.appendChild(categoryCE)
+
+    def gen(self):
+        return self.item
+
+
+class FeedGenerator(object):
+    """ Class doc """
+
+    def __init__(self):
+        """ Class initialiser """
+        self.doc = minidom.Document()
+        pass
+
+    def m0(self, rss_opts):
+        rss = self.doc.createElement('rss')
+        rss.setAttribute("version", "2.0")
+        self.doc.appendChild(rss)
+
+        self.channel = self.doc.createElement('channel')
+        rss.appendChild(self.channel)
+
+        title = self.doc.createElement('title')
+        text = self.doc.createTextNode(rss_opts['title'])
+        title.appendChild(text)
+        self.channel.appendChild(title)
+
+        link = self.doc.createElement('link')
+        text = self.doc.createTextNode(rss_opts['URL'] + rss_opts['out_xml'])
+        link.appendChild(text)
+        self.channel.appendChild(link)
+
+        description = self.doc.createElement('description')
+        text = self.doc.createTextNode(rss_opts['title'])
+        description.appendChild(text)
+        self.channel.appendChild(description)
+
+        lastBuildDate = self.doc.createElement('lastBuildDate')
+        text = self.doc.createTextNode(DATE)
+        lastBuildDate.appendChild(text)
+        self.channel.appendChild(lastBuildDate)
+
+    def add_entry(self):
+        feedEntry = FeedEntry()
+        self.channel.appendChild(feedEntry.gen())
+        return feedEntry
+
+    def m1(self):
+        return self.doc.toprettyxml(indent="  ")
+
+
 def rss(rss_opts):
-    doc = minidom.Document()
-
-    rss = doc.createElement('rss')
-    rss.setAttribute("version", "2.0")
-    doc.appendChild(rss)
-
-    channel = doc.createElement('channel')
-    rss.appendChild(channel)
-
-    title = doc.createElement('title')
-    text = doc.createTextNode(rss_opts['title'])
-    title.appendChild(text)
-    channel.appendChild(title)
-
-    link = doc.createElement('link')
-    text = doc.createTextNode(rss_opts['URL'] + rss_opts['out_xml'])
-    link.appendChild(text)
-    channel.appendChild(link)
-
-    description = doc.createElement('description')
-    text = doc.createTextNode(rss_opts['title'])
-    description.appendChild(text)
-    channel.appendChild(description)
-
-    lastBuildDate = doc.createElement('lastBuildDate')
-    text = doc.createTextNode(DATE)
-    lastBuildDate.appendChild(text)
-    channel.appendChild(lastBuildDate)
+    fg = FeedGenerator()
+    fg.m0(rss_opts)
 
     for name in glob.iglob(rss_opts['output'] + '/*/*/*.info.json'):
-        LSdirname, LSbasename = os.path.split(name) # id + .info.json
-        LSdirname = LSdirname.replace(rss_opts['output'], '')  # fichier parents
+        LSdirname, LSbasename = os.path.split(name)  # id + .info.json
+        LSdirname = LSdirname.replace(
+            rss_opts['output'], '')  # fichier parents
         name_mp4 = name.replace('.info.json', '.mp4')
 
         if os.path.isfile(name_mp4):
@@ -82,6 +170,7 @@ def rss(rss_opts):
             LSgetctime = strftime(
                 "%a, %d %b %Y %H:%M:%S %z", localtime(LSgetctime))
         else:
+            # ~continue
             LSmimetypes = ''  # mimetypes
             LSgetsize = ''  # getsize
             LSbasename = os.path.basename(name)  # id + .mp4
@@ -95,27 +184,12 @@ def rss(rss_opts):
         else:
             poster = f"poster=\"{jsonb['thumbnail']}\""
 
-        item = doc.createElement('item')
-        channel.appendChild(item)
-
-        title = doc.createElement('title')
-        text = doc.createCDATASection(jsonb['json_title'])
-        title.appendChild(text)
-        item.appendChild(title)
-
-        link = doc.createElement('link')
-        text = doc.createTextNode(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
-        link.appendChild(text)
-        item.appendChild(link)
-
-        guid = doc.createElement('guid')
-        text = doc.createTextNode(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
-        guid.setAttribute('isPermaLink', 'false')
-        guid.appendChild(text)
-        item.appendChild(guid)
-
-        description = doc.createElement('description')
-        description_rv = f"""<video width="100%" preload="metadata" controls {poster}>
+        fe = fg.add_entry()
+        fe.title(jsonb['json_title'])
+        fe.link(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
+        fe.guid(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
+        fe.description(
+            f"""<video width="100%" preload="metadata" controls {poster}>
         <source src="{rss_opts['URL']}{LSdirname}/{LSbasename}" type="{LSmimetypes}">
         Votre navigateur ne permet pas de lire les vidéos HTML5.
         </video><br>
@@ -123,38 +197,17 @@ def rss(rss_opts):
         <p>{jsonb['view_count']} vues</p>
         <hr>
         <a href="{jsonb['uploader_url']}">{jsonb['uploader']}</a>
-        <p>{jsonb['json_description']}</p>"""
-        text = doc.createCDATASection(description_rv)
-        description.setAttribute('type', 'html')
-        description.appendChild(text)
-        item.appendChild(description)
+        <p>{jsonb['json_description']}</p>""")
+        fe.pubDate(LSgetctime)
+        fe.enclosure(
+            f"{rss_opts['URL']}{LSdirname}/{LSbasename}",
+            LSgetsize,
+            LSmimetypes)
+        fe.author(jsonb['uploader'])
+        fe.category(jsonb['tags'])
 
-        pubDate = doc.createElement('pubDate')
-        text = doc.createTextNode(LSgetctime)
-        pubDate.appendChild(text)
-        item.appendChild(pubDate)
-
-        enclosure = doc.createElement('enclosure')
-        enclosure.setAttribute(
-            "url", f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
-        enclosure.setAttribute("length", LSgetsize)
-        enclosure.setAttribute("type", LSmimetypes)
-        item.appendChild(enclosure)
-
-        author = doc.createElement('author')
-        text = doc.createCDATASection(jsonb['uploader'])
-        author.appendChild(text)
-        item.appendChild(author)
-
-        for tags in jsonb['tags']:
-            category = doc.createElement('category')
-            text = doc.createCDATASection(tags)
-            category.appendChild(text)
-            item.appendChild(category)
-
-    xml_str = doc.toprettyxml(indent="  ")
     with open(rss_opts['output'] + rss_opts['out_xml'], "w", encoding='utf-8') as fichier:
-        fichier.write(xml_str)
+        fichier.write(fg.m1())
         pass
 
 
