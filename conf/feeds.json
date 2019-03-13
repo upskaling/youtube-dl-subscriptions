@@ -1,0 +1,16 @@
+{
+  "outline": [
+    {
+      "xmlUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=<UUID>",
+      "title": "<title>",
+      "update_interval": 86400,
+      "update": "2010-12-30 23:00:00"
+    },
+    {
+      "xmlUrl": "https://peertube.fr/feeds/videos.xml?accountId=<UUID>",
+      "title": "<title>",
+      "update_interval": 86400,
+      "update": "2010-12-30 23:00:00"
+    }
+  ]
+}

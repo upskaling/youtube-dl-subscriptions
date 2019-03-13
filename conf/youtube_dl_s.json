@@ -1,0 +1,30 @@
+{
+  "errorsfile": "./data/errorsfile.json",
+  "errorspass": 10,
+  "logfile": "./data/ytwatchlater.log",
+  "max_downloads": 15,
+  "watchlater": false,
+  "YOUTUBR_DL_DATA": "./data/",
+  "YOUTUBR_DL_WL": "./data/watchlater/",
+  "YOUTUBR_DL_WL_purge": 215000000,
+  "YOUTUBR_DL_WL_purge_days": 6,
+  "dl_opts": {
+    "json_file": "./data/feeds.json"
+    },
+  "rss_opts": {
+    "in_html": "./templates/index.html",
+    "out_html": "index.html",
+    "out_xml": "index.xml",
+    "title": "watchlater",
+    "URL": "https://<URL>/"
+    },
+  "ydl_opts": {
+    "cookiefile": "./data/cookies2.txt",
+    "download_archive": "./data/archive-WL.txt",
+    "format": "[height<=?720][ext=mp4]/best",
+    "is_live": false,
+    "mark_watched": true,
+    "max_filesize": 1200000000,
+    "writeinfojson": true
+  }
+}
