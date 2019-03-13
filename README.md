@@ -9,7 +9,6 @@
   "errorspass": 10,
   "logfile": "./data/ytwatchlater.log",
   "max_downloads": 15,
-  "random_sleep": 3420,
   "watchlater": false,
   "YOUTUBR_DL_DATA": "./data/",
   "YOUTUBR_DL_WL": "./data/watchlater/",

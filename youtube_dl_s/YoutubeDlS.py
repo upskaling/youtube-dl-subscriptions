@@ -30,11 +30,6 @@ config['ydl_opts']['outtmpl'] = f"{config['YOUTUBR_DL_WL']}{DATE}/%(id)s/%(id)s.
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-nor",
-        "--norandom",
-        action='store_true',
-        help='désactive le random')
-    parser.add_argument(
         "--purge",
         action='store_true',
         help='purge')
@@ -98,10 +93,19 @@ def purge(path):
         if tail in ['index.xml']:
             continue
 
-        modified_time = now - datetime.datetime.utcfromtimestamp(os.path.getmtime(video))
-        if modified_time > datetime.timedelta(days=config['YOUTUBR_DL_WL_purge_days']):
+        modified_time = now - \
+            datetime.datetime.utcfromtimestamp(os.path.getmtime(video))
+        if modified_time > datetime.timedelta(
+                days=config['YOUTUBR_DL_WL_purge_days']):
             print(f'{modified_time} Removing: {str(video)}')
-            os.rename(video, pathlib.Path(config['YOUTUBR_DL_WL'], "trash/", os.path.basename(video)))
+            os.rename(
+                video,
+                pathlib.Path(
+                    config['YOUTUBR_DL_WL'],
+                    "trash/",
+                    os.path.basename(video)
+                )
+            )
             # video.unlink()
 
 
@@ -134,6 +138,11 @@ def rmFunc():
 
 def youtube_dlFunc():
     from youtube_dl_s import downloaders
+
+    if config['watchlater']:
+        downloaders.YoutubeDLDownloader(
+            config['ydl_opts'],
+            ['https://www.youtube.com/playlist?list=WL'])
 
     def removeDuplicates(data):
         h = []
@@ -180,11 +189,6 @@ def youtube_dlFunc():
     with open(config['errorsfile'], 'w') as target:
         json.dump(listurl, target, indent=2)
 
-    if config['watchlater']:
-        downloaders.YoutubeDLDownloader(
-            config['ydl_opts'],
-            ['https://www.youtube.com/playlist?list=WL'])
-
 
 def test_youtube():
     # https://stackoverflow.com/questions/177389/testing-socket-connection-in-python
@@ -216,18 +220,6 @@ def get_lock(process_name):
         exit(0)
 
 
-def timeFunc(random_sleep):
-    import random
-    import time
-
-    number = random.randint(0, random_sleep)
-    str_number = str(datetime.timedelta(seconds=number))
-
-    logging.info(f"[sleep] dans {str_number}")
-    time.sleep(number)
-    logging.debug("[sleep] ok")
-
-
 def main():
     args = parse_arguments()
 
@@ -255,10 +247,6 @@ def main():
         if getsize(rm_opts) > config['YOUTUBR_DL_WL_purge']:
             purge(rm_opts)
         return
-
-    # random
-    if not args.norandom:
-        timeFunc(config.get('random_sleep', 0))
 
     if args.skip_download:
         config['ydl_opts']['skip_download'] = True
