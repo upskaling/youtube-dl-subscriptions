@@ -8,7 +8,9 @@ import logging
 from time import gmtime, strftime, localtime, ctime
 from xml.dom import minidom
 
-DATE = strftime("%a, %d %b %Y %H:%M:%S +0200", localtime())
+logger = logging.getLogger()
+
+datehour = strftime("%a, %d %b %Y %H:%M:%S +0200", localtime())
 
 
 def rejson(arg):
@@ -138,7 +140,7 @@ class FeedGenerator(object):
         self.channel.appendChild(description)
 
         lastBuildDate = self.doc.createElement('lastBuildDate')
-        text = self.doc.createTextNode(DATE)
+        text = self.doc.createTextNode(datehour)
         lastBuildDate.appendChild(text)
         self.channel.appendChild(lastBuildDate)
 
@@ -152,6 +154,7 @@ class FeedGenerator(object):
 
 
 def rss(rss_opts):
+    logger.info("[rss] refresh")
     fg = FeedGenerator()
     fg.m0(rss_opts)
 

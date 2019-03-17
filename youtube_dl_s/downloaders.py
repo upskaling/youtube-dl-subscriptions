@@ -8,20 +8,21 @@ import json
 import logging
 import youtube_dl
 
+logger = logging.getLogger()
 datetime_now = datetime.now()
 
 
 class MyLogger(object):
     def debug(self, msg):
-        logging.info(msg.strip())
+        logger.info(msg.strip())
         pass
 
     def warning(self, msg):
-        logging.warning(msg.strip())
+        logger.warning(msg.strip())
         pass
 
     def error(self, msg):
-        logging.error(msg.strip())
+        logger.error(msg.strip())
 
 
 def feedparser1(dl_opts):
@@ -40,7 +41,7 @@ def feedparser1(dl_opts):
         modified = name.get('modified')
 
         xmlUrl = name["xmlUrl"]
-        logging.debug('[dl] ' + xmlUrl)
+        logger.debug('[dl] ' + xmlUrl)
 
         feed = feedparser.parse(xmlUrl, etag=etag, modified=modified)
 
@@ -59,10 +60,10 @@ def feedparser1(dl_opts):
         for j in len_feed:
             timef = feed['items'][j]['published_parsed']
             dt = datetime.fromtimestamp(mktime(timef))
-            logging.debug(f"[dl]   {str(dt)} {feed['items'][j]['link']}")
+            logger.debug(f"[dl]   {str(dt)} {feed['items'][j]['link']}")
             if dt > update:
                 videos.append(feed['items'][j]['link'])
-                logging.debug('[dl]    ajout de la vidéo ci-dessus')
+                logger.debug('[dl]    ajout de la vidéo ci-dessus')
 
         name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -74,10 +75,10 @@ def feedparser1(dl_opts):
 def YoutubeDLDownloader(ydl_opts, links=[]):
     len_links = len(links)
     if len_links == 0:
-        logging.info('[dl] Sorry, no new video found')
+        logger.info('[dl] Sorry, no new video found')
         return
 
-    logging.info(f"[dl] {str(len_links)} new videos found")
+    logger.info(f"[dl] {str(len_links)} new videos found")
     ydl_opts['logger'] = MyLogger()
     errors = []
     for url in links:
@@ -90,7 +91,7 @@ def YoutubeDLDownloader(ydl_opts, links=[]):
 
 
 if __name__ == "__main__":
-    DATE = datetime.now().strftime('%Y-%m-%d')
+    date = datetime.now().strftime('%Y-%m-%d')
 
     dl_opts = {
         'json_file': './data/feeds.json',
@@ -104,7 +105,7 @@ if __name__ == "__main__":
         'cookiefile': f"{dl_opts['data']}/cookies2.txt",
         'ignoreerrors': True,
         'writeinfojson': True,
-        'outtmpl': f"{dl_opts['output']}{DATE}/%(id)s/%(id)s.%(ext)s",
+        'outtmpl': f"{dl_opts['output']}{date}/%(id)s/%(id)s.%(ext)s",
         'download_archive': f"{dl_opts['data']}/archive-WL.txt",
         'is_live': False,
         'format': '[height<=?720][ext=mp4]/best'

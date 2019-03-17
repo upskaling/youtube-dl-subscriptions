@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from youtube_dl_s import ls
+import ls
 import argparse
 import datetime
 import json
 import logging
+import logging.handlers
 import os
 import pathlib
 import socket
+import sys
+
+logger = logging.getLogger()
 
 now = datetime.datetime.now()
 
-DATE = datetime.datetime.now().strftime('%Y-%m-%d')
-DATE1 = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+date = datetime.datetime.now().strftime('%Y-%m-%d')
+datehour = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 config = pathlib.Path.home() / '.config/youtube-dl-s/youtube_dl_s.json'
 
@@ -24,11 +28,30 @@ config['rss_opts']['output'] = config['YOUTUBR_DL_WL']
 config['dl_opts']['output'] = config['YOUTUBR_DL_WL']
 config['dl_opts']['data'] = config['YOUTUBR_DL_DATA']
 
-config['ydl_opts']['outtmpl'] = f"{config['YOUTUBR_DL_WL']}{DATE}/%(id)s/%(id)s.%(ext)s"
+config['ydl_opts']['outtmpl'] = \
+    f"{config['YOUTUBR_DL_WL']}{date}/%(id)s/%(id)s.%(ext)s"
+
+
+class CustomFormatter(argparse.RawDescriptionHelpFormatter,
+                      argparse.ArgumentDefaultsHelpFormatter):
+    pass
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser()
+    """Parse arguments."""
+    parser = argparse.ArgumentParser(
+        description=sys.modules[__name__].__doc__,
+        formatter_class=CustomFormatter)
+
+    g = parser.add_mutually_exclusive_group()
+    g.add_argument(
+        "--debug", "-d", action="store_true",
+        default=False,
+        help="enable debugging")
+    g.add_argument(
+        "--silent", "-s", action="store_true",
+        default=False,
+        help="don't log")
     parser.add_argument(
         "--purge",
         action='store_true',
@@ -42,17 +65,38 @@ def parse_arguments():
         action='store_true', dest='refresh_xml',
         help='forces the refresh')
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action='store_true',
-        help='debug')
+        "--refresh-html",
+        action='store_true', dest='refresh_html',
+        help='forces the refresh')
+
     return parser.parse_args()
+
+
+def setup_logging(options):
+    """Configure logging."""
+    root = logging.getLogger("")
+    root.setLevel(logging.WARNING)
+    logger.setLevel(options.debug and logging.DEBUG or logging.INFO)
+    if not options.silent:
+        if not sys.stderr.isatty():
+            facility = logging.handlers.SysLogHandler.LOG_DAEMON
+            sh = logging.handlers.SysLogHandler(address='/dev/log',
+                                                facility=facility)
+            sh.setFormatter(logging.Formatter(
+                "{0}[{1}]: %(message)s".format(
+                    logger.name,
+                    os.getpid())))
+            root.addHandler(sh)
+        else:
+            ch = logging.StreamHandler()
+            ch.setFormatter(logging.Formatter(
+                "%(levelname)s[%(name)s] %(message)s"))
+            root.addHandler(ch)
 
 
 def diffFunc():
     import difflib
     import glob
-    import sys
 
     FILELIST = config['YOUTUBR_DL_DATA'] + "filelist"
     cur_files = "\n".join(
@@ -66,14 +110,17 @@ def diffFunc():
             fichier = ''
 
     if fichier != cur_files:
-        logging.info("[rss]")
+        logger.info("[rss]")
         ls.rss(config['rss_opts'])
+        if config['html']:
+            logging.info("[html]")
+            ls.html(config['rss_opts'])
         dif = difflib.unified_diff(
             fichier.splitlines(),
             cur_files.splitlines(),
             n=0
         )
-        logging.info('[diff] \n' + '\n'.join(dif))
+        logger.info('[diff] \n' + '\n'.join(dif))
         with open(FILELIST, "w", encoding='utf-8') as fichier:
             fichier.write(cur_files)
 
@@ -90,7 +137,7 @@ def purge(path):
     for video in pathlib.Path(path).glob('*'):
 
         head, tail = os.path.split(video)
-        if tail in ['index.xml']:
+        if tail in ['style.css', 'favicon.png', 'index.xml', 'index.html']:
             continue
 
         modified_time = now - \
@@ -118,26 +165,26 @@ def rmFunc():
     try:
         os.listdir(folder)
     except Exception as e:
-        logging.error(e)
+        logger.exception(e)
         os.makedirs(os.path.dirname(folder))  # creating directories
 
     for the_file in os.listdir(folder):
         file_path = os.path.join(folder, the_file)
         try:
             if os.path.isfile(file_path):
-                logging.info(file_path)
+                logger.info(file_path)
                 os.unlink(file_path)
             elif os.path.isdir(file_path):
-                logging.info(file_path)
+                logger.info(file_path)
                 shutil.rmtree(file_path)
         except Exception as e:
-            logging.error(e)
+            logger.exception(e)
 
-    logging.info("[supprimer] ok")
+    logger.info("[supprimer] ok")
 
 
 def youtube_dlFunc():
-    from youtube_dl_s import downloaders
+    import downloaders
 
     if config['watchlater']:
         downloaders.YoutubeDLDownloader(
@@ -145,46 +192,45 @@ def youtube_dlFunc():
             ['https://www.youtube.com/playlist?list=WL'])
 
     def removeDuplicates(data):
-        h = []
-        result = []
+        h = list()
+        result = list()
         for i in data:
             if i['url'] not in h:
-                h += [i['url']]
-                result += [i]
+                h.append(i['url'])
+                result.append(i)
         return result
 
-    with open(config['errorsfile'], 'r') as target:
-        try:
-            errorslines = json.load(target)
-        except json.decoder.JSONDecodeError:
-            errorslines = []
+    listurl = list()
+    listurl += downloaders.feedparser1(config['dl_opts'])
 
-    feedurl = downloaders.feedparser1(config['dl_opts'])
-    if feedurl:
-        listurl = []
-        for i in feedurl:
-            data1 = {}
-            data1['url'] = i
-            data1['update'] = DATE1
-            data1['pass'] = 0
-            listurl += [data1]
-    else:
-        listurl = []
+    try:
+        with open(config['errorsfile'], 'r') as target:
+            listurl += json.load(target)
+    except json.decoder.JSONDecodeError as e:
+        logger.exception('json.decoder.JSONDecodeError:', e)
+    except FileNotFoundError as e:
+        logger.exception('FileNotFoundError:', e)
 
-    listurl += errorslines
     listurl = removeDuplicates(listurl)
+    listurl = sorted(listurl, key=lambda k: k['update'])
+
+    with open(config['errorsfile'], 'w') as target:
+        json.dump(listurl, target, indent=2)
 
     md = 0
-    for i in listurl:
-        if i['pass'] >= config['errorspass']:
-            i['pass'] += 1
-            continue
+    for i in listurl[:]:
         md += 1
-        if md <= config['max_downloads']:
-            if downloaders.YoutubeDLDownloader(config['ydl_opts'], [i['url']]):
-                i['pass'] += 1
-            else:
-                listurl.remove(i)
+
+        if not md <= config['max_downloads']:
+            break
+
+        if i['pass'] >= config['errorspass']:
+            continue
+
+        if downloaders.YoutubeDLDownloader(config['ydl_opts'], [i['url']]):
+            i['pass'] += 1
+        else:
+            listurl.remove(i)
 
     with open(config['errorsfile'], 'w') as target:
         json.dump(listurl, target, indent=2)
@@ -199,10 +245,10 @@ def test_youtube():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.connect((host, port))
-            logging.info(f"[connect] Success connecting to {host}")
+            logger.info(f"[connect] Success connecting to {host}")
             return True
         except Exception as e:
-            logging.error(
+            logger.exception(
                 f"[connect] Cannot connect to {host} Exception is {e}")
         finally:
             s.close()
@@ -216,39 +262,28 @@ def get_lock(process_name):
     try:
         get_lock._lock_socket.bind('\0' + process_name)
     except Exception as e:
-        logging.error(f'[lock] {e}')
+        logger.exception(f'[lock] {e}')
         exit(0)
 
 
-def main():
-    args = parse_arguments()
-
-    # verbose
-    if args.verbose:
-        logging.basicConfig(
-            format='%(asctime)s %(message)s',
-            filename=config['logfile'],
-            level=logging.DEBUG)
-    else:
-        logging.basicConfig(
-            format='%(asctime)s %(message)s',
-            filename=config['logfile'],
-            level=logging.INFO)
-
+def YoutubeDLS(options):
     # refreshxml
-    if args.refresh_xml:
-        logging.info("[rss] refresh")
+    if options.refresh_xml:
         ls.rss(config['rss_opts'])
 
+    # refreshhml
+    if options.refresh_html:
+        ls.html(config['rss_opts'])
+
     # purge
-    if args.purge:
+    if options.purge:
         rm_opts = config['YOUTUBR_DL_WL']
         print(getsize(rm_opts))
         if getsize(rm_opts) > config['YOUTUBR_DL_WL_purge']:
             purge(rm_opts)
         return
 
-    if args.skip_download:
+    if options.skip_download:
         config['ydl_opts']['skip_download'] = True
 
     get_lock('youtube-dl-subscriptions')
@@ -256,7 +291,20 @@ def main():
         youtube_dlFunc()
         rmFunc()
         diffFunc()
-        logging.info("[fin] " + DATE1)
+        logger.info("[fin] " + datehour)
+
+
+def main():
+    options = parse_arguments()
+    setup_logging(options)
+
+    try:
+        YoutubeDLS(options)
+    except Exception as e:
+        logger.exception("%s", e)
+        # exit(1)
+    exit(0)
+    pass
 
 
 if __name__ == '__main__':
