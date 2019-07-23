@@ -27,6 +27,7 @@ def rejson(arg):
     rejson['view_count'] = str(data.get("view_count", "None"))
     rejson['uploader'] = str(data.get("uploader", "None"))
     rejson['channel_url'] = str(data.get("channel_url", "None"))
+    rejson['_filename'] = str(data.get("_filename", "None"))
     rejson['tags'] = data.get("tags", "None")
 
     if data.get('uploader_url'):
@@ -159,17 +160,18 @@ def rss(rss_opts):
     fg.m0(rss_opts)
 
     for name in glob.iglob(rss_opts['output'] + '/*/*/*.info.json'):
+        jsonb = rejson(name)
+
         LSdirname, LSbasename = os.path.split(name)  # id + .info.json
         LSdirname = LSdirname.replace(
             rss_opts['output'], '')  # fichier parents
-        name_mp4 = name.replace('.info.json', '.mp4')
 
-        if os.path.isfile(name_mp4):
-            LSmimetypes = mimetypes.guess_type(name_mp4)[0]  # mimetypes
-            LSgetsize = str(os.path.getsize(name_mp4))  # getsize
-            LSbasename = os.path.basename(name_mp4)  # id + .mp4
+        if os.path.isfile(jsonb['_filename']):
+            LSmimetypes = mimetypes.guess_type(jsonb['_filename'])[0]
+            LSgetsize = str(os.path.getsize(jsonb['_filename']))  # getsize
+            LSbasename = os.path.basename(jsonb['_filename'])  # id + .mp4
             # date
-            LSgetctime = os.path.getmtime(name_mp4)
+            LSgetctime = os.path.getmtime(jsonb['_filename'])
             LSgetctime = strftime(
                 "%a, %d %b %Y %H:%M:%S %z", localtime(LSgetctime))
         else:
@@ -178,9 +180,6 @@ def rss(rss_opts):
             LSgetsize = ''  # getsize
             LSbasename = os.path.basename(name)  # id + .mp4
             LSgetctime = ''
-
-        # -----------------------------
-        jsonb = rejson(name)
 
         if jsonb['thumbnail'] == 'None':
             poster = ''
