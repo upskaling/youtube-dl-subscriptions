@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
 from time import time, mktime, strptime
+import datetime
 import feedparser
 import json
 import logging
 import youtube_dl
 
 logger = logging.getLogger()
-datetime_now = datetime.now()
+datetime_now = datetime.datetime.now()
 
 
 class MyLogger(object):
@@ -31,8 +31,9 @@ def feedparser1(dl_opts):
 
     videos = []
     for name in data["outline"]:
-        update = datetime.strptime(name["update"], "%Y-%m-%d %H:%M:%S")
-        timeToLiveSeconds = timedelta(seconds=name["update_interval"])
+        update = datetime.datetime.strptime(
+            name["update"], "%Y-%m-%d %H:%M:%S")
+        timeToLiveSeconds = datetime.timedelta(seconds=name["update_interval"])
         age = datetime_now - update
         if age <= timeToLiveSeconds:
             continue
@@ -59,10 +60,15 @@ def feedparser1(dl_opts):
         len_feed = range(0, len(feed['items']))
         for j in len_feed:
             timef = feed['items'][j]['published_parsed']
-            dt = datetime.fromtimestamp(mktime(timef))
-            logger.debug(f"[dl]   {str(dt)} {feed['items'][j]['link']}")
-            if dt > update:
-                videos.append(feed['items'][j]['link'])
+            timef = datetime.datetime.fromtimestamp(mktime(timef))
+            logger.debug(f"[dl]   {str(timef)} {feed['items'][j]['link']}")
+            if timef > update:
+                art = dict()
+                art['url'] = feed['items'][j]['link']
+                art['title'] = feed['items'][j]['title']
+                art['update'] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
+                art['pass'] = 0
+                videos.append(art)
                 logger.debug('[dl]    ajout de la vidéo ci-dessus')
 
         name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
@@ -91,7 +97,7 @@ def YoutubeDLDownloader(ydl_opts, links=[]):
 
 
 if __name__ == "__main__":
-    date = datetime.now().strftime('%Y-%m-%d')
+    date = datetime.datetime.now().strftime('%Y-%m-%d')
 
     dl_opts = {
         'json_file': './data/feeds.json',
