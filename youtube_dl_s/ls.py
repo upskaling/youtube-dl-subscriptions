@@ -13,27 +13,17 @@ logger = logging.getLogger()
 datehour = strftime("%a, %d %b %Y %H:%M:%S +0200", localtime())
 
 
-def rejson(arg):
+def rejson(json_path):
 
-    rejson = {}
-    with open(arg) as json_file:
+    rejson = dict()
+    with open(json_path) as json_file:
         data = json.load(json_file)
 
-    rejson['upload_date'] = str(data.get("upload_date", "None"))
-    rejson['json_id'] = str(data.get("id", "None"))
-    rejson['webpage_url'] = str(data.get("webpage_url", "None"))
-    rejson['thumbnail'] = str(data.get("thumbnail", "None"))
-    rejson['json_title'] = str(data.get("title", "None"))
-    rejson['view_count'] = str(data.get("view_count", "None"))
-    rejson['uploader'] = str(data.get("uploader", "None"))
-    rejson['channel_url'] = str(data.get("channel_url", "None"))
-    rejson['_filename'] = str(data.get("_filename", "None"))
-    rejson['tags'] = data.get("tags", "None")
+    for i in data:
+        rejson[i] = data.get(i, "None")
 
-    if data.get('uploader_url'):
-        rejson['uploader_url'] = str(data.get("uploader_url", "None"))
-    elif data.get('uploder_url'):
-        rejson['uploader_url'] = str(data.get('uploder_url', "None"))
+    if data.get('uploder_url'):
+        rejson['uploader_url'] = data.get('uploder_url', "None")
 
     json_description = str(data.get("description", "None"))
     rejson['json_description'] = json_description.replace('\n', '<br>')
@@ -187,7 +177,7 @@ def rss(rss_opts):
             poster = f"poster=\"{jsonb['thumbnail']}\""
 
         fe = fg.add_entry()
-        fe.title(jsonb['json_title'])
+        fe.title(jsonb['title'])
         fe.link(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         fe.guid(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         fe.description(
@@ -195,7 +185,7 @@ def rss(rss_opts):
         <source src="{rss_opts['URL']}{LSdirname}/{LSbasename}" type="{LSmimetypes}">
         Votre navigateur ne permet pas de lire les vidéos HTML5.
         </video><br>
-        <a title="{jsonb['json_title']}" href="{jsonb['webpage_url']}">{jsonb['json_title']}</a><br>
+        <a title="{jsonb['title']}" href="{jsonb['webpage_url']}">{jsonb['title']}</a><br>
         <p>{jsonb['view_count']} vues</p>
         <hr>
         <a href="{jsonb['uploader_url']}">{jsonb['uploader']}</a>
