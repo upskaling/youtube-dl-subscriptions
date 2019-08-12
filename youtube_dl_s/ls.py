@@ -149,9 +149,14 @@ def rss(rss_opts):
     fg = FeedGenerator()
     fg.m0(rss_opts)
 
-    for name in glob.iglob(rss_opts['output'] + '/*/*/*.info.json'):
-        jsonb = rejson(name)
+    for name in glob.glob(rss_opts['output'] + '/*/*/'):
 
+        jsonb = glob.glob(name + '*.info.json')
+
+        if not jsonb:
+            continue
+
+        jsonb = rejson(jsonb[0])
         LSdirname, LSbasename = os.path.split(name)  # id + .info.json
         LSdirname = LSdirname.replace(
             rss_opts['output'], '')  # fichier parents
@@ -170,6 +175,10 @@ def rss(rss_opts):
             LSgetsize = ''  # getsize
             LSbasename = os.path.basename(name)  # id + .mp4
             LSgetctime = ''
+
+        jpg_gg = glob.glob(name + '*.jpg')
+        if jpg_gg:
+            jsonb['thumbnail'] = jpg_gg[0].replace(rss_opts['output'], "")
 
         if jsonb['thumbnail'] == 'None':
             poster = ''
