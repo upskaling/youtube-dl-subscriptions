@@ -26,8 +26,14 @@ class MyLogger(object):
 
 
 def feedparser1(dl_opts):
-    with open(dl_opts['json_file'], 'r', encoding='utf-8') as target:
-        data = json.load(target)
+    try:
+        with open(dl_opts['json_file'], 'r', encoding='utf-8') as target:
+            data = json.load(target)
+    except FileNotFoundError as e:
+        logger.warning(e)
+        data = {}
+        data["outline"] = []
+        pass
 
     videos = []
     for name in data["outline"]:
