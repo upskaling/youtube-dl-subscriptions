@@ -72,6 +72,7 @@ def feedparser1(dl_opts):
                 art = dict()
                 art['url'] = feed['items'][j]['link']
                 art['title'] = feed['items'][j]['title']
+                art['uploader'] = name['title']
                 art['update'] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
                 art['pass'] = 0
                 videos.append(art)
