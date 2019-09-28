@@ -35,8 +35,10 @@ def feedparser1(dl_opts):
         data["outline"] = []
         pass
 
+    i = 0
     videos = []
     for name in data["outline"]:
+
         update = datetime.datetime.strptime(
             name["update"], "%Y-%m-%d %H:%M:%S")
         timeToLiveSeconds = datetime.timedelta(seconds=name["update_interval"])
@@ -44,11 +46,19 @@ def feedparser1(dl_opts):
         if age <= timeToLiveSeconds:
             continue
 
+        i += 1
+
+        try:
+            if not i < dl_opts['max_feed']:
+                break
+        except NameError:
+            pass
+
         etag = name.get('etag')
         modified = name.get('modified')
 
         xmlUrl = name["xmlUrl"]
-        logger.debug('[dl] ' + xmlUrl)
+        logger.info(f'[feedparser]: {xmlUrl}')
 
         feed = feedparser.parse(xmlUrl, etag=etag, modified=modified)
 
@@ -63,12 +73,15 @@ def feedparser1(dl_opts):
         except KeyError:
             name["status"] = 0
 
+        addart = 0
         len_feed = range(0, len(feed['items']))
         for j in len_feed:
             timef = feed['items'][j]['published_parsed']
             timef = datetime.datetime.fromtimestamp(mktime(timef))
-            logger.debug(f"[dl]   {str(timef)} {feed['items'][j]['link']}")
+            logger.debug(
+                f"[feedparser]:   {str(timef)} {feed['items'][j]['link']}")
             if timef > update:
+                addart += 1
                 art = dict()
                 art['url'] = feed['items'][j]['link']
                 art['title'] = feed['items'][j]['title']
@@ -76,9 +89,11 @@ def feedparser1(dl_opts):
                 art['update'] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
                 art['pass'] = 0
                 videos.append(art)
-                logger.debug('[dl]    ajout de la vidéo ci-dessus')
 
         name["update"] = datetime_now.strftime("%Y-%m-%d %H:%M:%S")
+
+        if addart >= 1:
+            logger.info(f'[feedparser]:  => add {addart}')
 
     with open(dl_opts['json_file'], 'w') as target:
         json.dump(data, target, indent=2)
@@ -108,9 +123,7 @@ if __name__ == "__main__":
 
     dl_opts = {
         'json_file': './data/feeds.json',
-        'output': './data/watchlater/',
-        'data': './data',
-        'limit': 15
+        'max_feed': 250
     }
 
     ydl_opts = {
