@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import downloaders
 import ls
 import argparse
 import datetime
@@ -183,57 +184,61 @@ def rmFunc():
     logger.info("[supprimer] ok")
 
 
-def youtube_dlFunc():
-    import downloaders
+class list_of_videos_to_watch():
 
-    if config['watchlater']:
-        downloaders.YoutubeDLDownloader(
-            config['ydl_opts'],
-            ['https://www.youtube.com/playlist?list=WL'])
+    def __init__(self):
+        self.listURL = []
+        self.read()
 
-    def removeDuplicates(data):
-        h = list()
-        result = list()
-        for i in data:
+    def get(self):
+        return self.listURL
+
+    def read(self):
+        try:
+            with open(config['errorsfile'], 'r') as target:
+                self.listURL += json.load(target)
+        except json.decoder.JSONDecodeError as e:
+            logger.exception('json.decoder.JSONDecodeError:', e)
+        except FileNotFoundError as e:
+            logger.exception('FileNotFoundError:', e)
+
+    def feedparser1(self):
+        self.listURL += downloaders.feedparser1(config['dl_opts'])
+
+    def removeDuplicates(self):
+        h = []
+        self.result = []
+        for i in self.listURL:
             if i['url'] not in h:
                 h.append(i['url'])
-                result.append(i)
-        return result
+                self.result.append(i)
+        self.listURL = self.result
 
-    listurl = list()
-    listurl += downloaders.feedparser1(config['dl_opts'])
+    def Sorted(self):
+        self.listURL = sorted(self.listURL, key=lambda k: k['update'])
+        self.writing()
 
-    try:
-        with open(config['errorsfile'], 'r') as target:
-            listurl += json.load(target)
-    except json.decoder.JSONDecodeError as e:
-        logger.exception('json.decoder.JSONDecodeError:', e)
-    except FileNotFoundError as e:
-        logger.exception('FileNotFoundError:', e)
+    def writing(self):
+        with open(config['errorsfile'], 'w') as target:
+            json.dump(self.listURL, target, indent=2)
 
-    listurl = removeDuplicates(listurl)
-    listurl = sorted(listurl, key=lambda k: k['update'])
+    def downloader(self):
+        md = 0
+        for i in self.listURL[:]:
+            md += 1
 
-    with open(config['errorsfile'], 'w') as target:
-        json.dump(listurl, target, indent=2)
+            if not md <= config['max_downloads']:
+                break
 
-    md = 0
-    for i in listurl[:]:
-        md += 1
+            if i['pass'] >= config['errorspass']:
+                continue
 
-        if not md <= config['max_downloads']:
-            break
+            if downloaders.YoutubeDLDownloader(config['ydl_opts'], [i['url']]):
+                i['pass'] += 1
+            else:
+                self.listURL.remove(i)
 
-        if i['pass'] >= config['errorspass']:
-            continue
-
-        if downloaders.YoutubeDLDownloader(config['ydl_opts'], [i['url']]):
-            i['pass'] += 1
-        else:
-            listurl.remove(i)
-
-    with open(config['errorsfile'], 'w') as target:
-        json.dump(listurl, target, indent=2)
+        self.writing()
 
 
 def test_youtube():
@@ -288,7 +293,19 @@ def YoutubeDLS(options):
 
     get_lock('youtube-dl-subscriptions')
     if test_youtube():
-        youtube_dlFunc()
+
+        if config['watchlater']:
+            downloaders.YoutubeDLDownloader(
+                config['ydl_opts'],
+                ['https://www.youtube.com/playlist?list=WL'])
+
+        laus = list_of_videos_to_watch()
+        laus.feedparser1()
+        laus.removeDuplicates()
+        laus.Sorted()
+        if not options.skip_download:
+            laus.downloader()
+
         rmFunc()
         diffFunc()
         logger.info("[fin] " + datehour)
