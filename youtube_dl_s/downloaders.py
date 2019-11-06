@@ -35,7 +35,7 @@ def feedparser1(dl_opts):
         data["outline"] = []
         pass
 
-    i = 0
+    max_f = 0
     videos = []
     for name in data["outline"]:
 
@@ -46,10 +46,10 @@ def feedparser1(dl_opts):
         if age <= timeToLiveSeconds:
             continue
 
-        i += 1
+        max_f += 1
 
         try:
-            if not i < dl_opts['max_feed']:
+            if not max_f < dl_opts['max_feed']:
                 break
         except NameError:
             pass
@@ -113,7 +113,7 @@ def YoutubeDLDownloader(ydl_opts, links=[]):
         try:
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
-        except Exception as e:
+        except Exception:
             errors += [url]
     return errors
 

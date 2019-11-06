@@ -106,7 +106,7 @@ def diffFunc():
     try:
         with open(FILELIST, "r", encoding='utf-8') as fichier:
             fichier = str(fichier.read())
-    except Exception as e:
+    except Exception:
         with open(FILELIST, "w", encoding='utf-8') as fichier:
             fichier = ''
 
@@ -128,7 +128,7 @@ def diffFunc():
 
 def getsize(path):
     fichier = []
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
         for i in files:
             fichier.append(os.path.join(root, i))
     return sum([os.path.getsize(i) for i in fichier])
@@ -137,7 +137,7 @@ def getsize(path):
 def purge(path):
     for video in pathlib.Path(path).glob('*'):
 
-        head, tail = os.path.split(video)
+        _, tail = os.path.split(video)
         if tail in ['style.css', 'favicon.png', 'index.xml', 'index.html']:
             continue
 
@@ -198,9 +198,11 @@ class list_of_videos_to_watch():
             with open(config['errorsfile'], 'r') as target:
                 self.listURL += json.load(target)
         except json.decoder.JSONDecodeError as e:
-            logger.exception('json.decoder.JSONDecodeError:', e)
+            message = 'json.decoder.JSONDecodeError:', e
+            logger.exception(message)
         except FileNotFoundError as e:
-            logger.exception('FileNotFoundError:', e)
+            message = 'FileNotFoundError:', e
+            logger.exception(message)
 
     def feedparser1(self):
         self.listURL += downloaders.feedparser1(config['dl_opts'])
@@ -293,7 +295,6 @@ def YoutubeDLS(options):
 
     get_lock('youtube-dl-subscriptions')
     if test_youtube():
-
         if config['watchlater']:
             downloaders.YoutubeDLDownloader(
                 config['ydl_opts'],

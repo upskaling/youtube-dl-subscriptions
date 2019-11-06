@@ -16,7 +16,7 @@ datehour = strftime("%a, %d %b %Y %H:%M:%S +0200", localtime())
 
 def rejson(json_path):
 
-    rejson = dict()
+    rejson = {}
     with open(json_path) as json_file:
         data = json.load(json_file)
 
@@ -221,7 +221,7 @@ def html(rss_opts):
     with open(rss_opts['in_html'], 'r', encoding='utf-8') as fichier:
         index_html = fichier.read()
 
-    ps = list()
+    ps = []
     for date in glob.glob(rss_opts['output'] + "/*/"):
         dirname = os.path.dirname(date).replace(rss_opts['output'], "")
 
