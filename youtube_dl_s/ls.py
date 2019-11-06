@@ -222,7 +222,9 @@ def html(rss_opts):
         index_html = fichier.read()
 
     ps = []
-    for date in glob.glob(rss_opts['output'] + "/*/"):
+    ggrss = glob.glob(rss_opts['output'] + "/*/")
+    ggrss = sorted(ggrss)
+    for date in ggrss:
         dirname = os.path.dirname(date).replace(rss_opts['output'], "")
 
         if dirname == "trash":
