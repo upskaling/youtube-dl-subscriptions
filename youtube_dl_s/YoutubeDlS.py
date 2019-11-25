@@ -145,7 +145,7 @@ def purge(path):
             datetime.datetime.utcfromtimestamp(os.path.getmtime(video))
         if modified_time > datetime.timedelta(
                 days=config['YOUTUBR_DL_WL_purge_days']):
-            print(f'{modified_time} Removing: {str(video)}')
+            logger.info(f'{modified_time} Removing: {str(video)}')
             os.rename(
                 video,
                 pathlib.Path(
@@ -284,11 +284,13 @@ def YoutubeDLS(options):
 
     # purge
     if options.purge:
-        rm_opts = config['YOUTUBR_DL_WL']
-        print(getsize(rm_opts))
-        if getsize(rm_opts) > config['YOUTUBR_DL_WL_purge']:
-            purge(rm_opts)
+        print(getsize(config['YOUTUBR_DL_WL']))
+        purge(config['YOUTUBR_DL_WL'])
         return
+
+    if getsize(config['YOUTUBR_DL_WL']) > config['YOUTUBR_DL_WL_purge']:
+        logger.info(f"[purge]")
+        purge(config['YOUTUBR_DL_WL'])
 
     if options.skip_download:
         config['ydl_opts']['skip_download'] = True
