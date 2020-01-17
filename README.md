@@ -81,6 +81,7 @@ python3 youtube_dl_s/opmltojson.py
 - https://github.com/mewfree/youtube-dl-subscriptions
 - https://github.com/sawyerf/Youtube_subscription_manager
 - https://github.com/yazgoo/youtube-subscriptions
+- https://github.com/XiovV/go-auto-yt
 
 
 ## RESOURCES
