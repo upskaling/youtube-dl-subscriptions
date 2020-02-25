@@ -232,7 +232,7 @@ def html(rss_opts):
 
         ps.append(
             f"""<!-- {dirname} -->
-    <h3 class="window-subtitle" >{dirname}</h3>
+    <h3 id="{dirname}" class="window-subtitle" >{dirname}</h3>
     <div class=pure-g>""")
 
         for name in glob.glob(date + "*/"):
