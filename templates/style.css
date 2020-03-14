@@ -56,6 +56,10 @@ body {
   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
 }
 
+.video_list {
+  font-size: 12px;
+}
+
 .pure-g {
   display: flex;
   flex-flow: row wrap;

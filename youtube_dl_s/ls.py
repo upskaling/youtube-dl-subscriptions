@@ -230,12 +230,15 @@ def html(rss_opts):
         if dirname == "trash":
             continue
 
+        video_list = glob.glob(date + "*/")
+
         ps.append(
             f"""<!-- {dirname} -->
-    <h3 id="{dirname}" class="window-subtitle" >{dirname}</h3>
+    <h3 id="{dirname}" class="window-subtitle" >{dirname}
+    <span class="video_list">({len(video_list)})</span></h3>
     <div class=pure-g>""")
 
-        for name in glob.glob(date + "*/"):
+        for name in video_list:
 
             jsonb = glob.glob(name + '*.info.json')
 
