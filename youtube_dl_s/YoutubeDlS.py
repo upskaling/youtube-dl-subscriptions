@@ -227,7 +227,6 @@ class list_of_videos_to_watch():
     def downloader(self):
         md = 0
         for i in self.listURL[:]:
-            md += 1
 
             if not md <= config['max_downloads']:
                 break
@@ -238,6 +237,7 @@ class list_of_videos_to_watch():
             if downloaders.YoutubeDLDownloader(config['ydl_opts'], [i['url']]):
                 i['pass'] += 1
             else:
+                md += 1
                 self.listURL.remove(i)
 
         self.writing()
