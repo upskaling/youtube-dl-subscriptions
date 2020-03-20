@@ -268,8 +268,8 @@ def html(rss_opts):
             if jsonb['thumbnail'] is None:
                 poster = ''
             else:
-                poster = f'''<img id="img" class="lazyload thumbnail" ''' \
-                    f'''data-src="{jsonb['thumbnail']}" width="210">'''
+                poster = f'''<img id="img" loading="lazy" class="thumbnail"'''\
+                    f''' src="{jsonb['thumbnail']}" width="210">'''
 
             ps.append(f'''    <my-video-miniature>
         <div class="video-miniature">
@@ -296,7 +296,6 @@ def html(rss_opts):
 
     output = os.path.abspath(rss_opts['output'])
     copy('./templates/style.css', output)
-    copy('./templates/stat.js', output)
     copy('./templates/favicon.png', output)
 
 
