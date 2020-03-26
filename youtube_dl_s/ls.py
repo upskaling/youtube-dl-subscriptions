@@ -257,9 +257,16 @@ def html(rss_opts):
                     "%M:%S", gmtime(jsonb['duration']))
 
             if os.path.isfile(jsonb['_filename']):
-                LSbasename = os.path.basename(jsonb['_filename'])  # id + .mp4
+                url_video = LSdirname + "/" + \
+                    os.path.basename(jsonb['_filename'])
+                image1 = """<div class="t-m">
+        <img class="tile__favicon" src="favicon.png" width="16" height="16">
+            local</div>"""
             else:
-                LSbasename = os.path.basename(name)  # id + .mp4
+                url_video = jsonb['webpage_url']
+                image1 = """<div class="t-m">
+        <img class="tile__favicon" src="youtube.png" width="16" height="16">
+            YouTube</div>"""
 
             jpg_gg = glob.glob(name + '*.jpg')
             if jpg_gg:
@@ -273,7 +280,7 @@ def html(rss_opts):
 
             ps.append(f'''    <my-video-miniature>
         <div class="video-miniature">
-            <a href="{LSdirname}/{LSbasename}">
+            <a href="{url_video}">
                 <div class="thumbnail">{poster}
                     <p class="length">{jsonb['duration']}</p>
                 </div>
@@ -282,6 +289,7 @@ def html(rss_opts):
             <a href="{jsonb['uploader_url']}" rel="author">
                 <b>{jsonb['uploader']}</b></a>
             <p style="text-align:right">{jsonb['view_count']} vues</p>
+            {image1}
         </div>
     </my-video-miniature>''')
             pass
