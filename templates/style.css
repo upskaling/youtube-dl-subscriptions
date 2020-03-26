@@ -67,14 +67,14 @@ body {
 
 my-video-miniature {
   display:  inline-block;
+  border-radius: 4px;
   background: #F3F3F3;
   border-bottom: 1px solid #d8dee9;
+  box-shadow: 0 2px 3px rgba(0,0,0,0.06);
+  margin-right: 0.5%;
+  margin-left: 0.5%;
+  margin-bottom: 8px;
   width: 100%;
-}
-
-.video-miniature {
-  padding-left: 1em;
-  padding-right: 1em;
 }
 
 my-video-miniature p {
@@ -124,10 +124,13 @@ h1 img {
   margin: 2em 0;
 }
 
+.tile__body {
+  padding: 1em;
+}
 
 @media screen and (min-width:40em) {
   my-video-miniature {
-    width: 25%;
+    width: 24%;
   }
   body {
     max-width : 83%;

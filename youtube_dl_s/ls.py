@@ -259,14 +259,16 @@ def html(rss_opts):
             if os.path.isfile(jsonb['_filename']):
                 url_video = LSdirname + "/" + \
                     os.path.basename(jsonb['_filename'])
-                image1 = """<div class="t-m">
-        <img class="tile__favicon" src="favicon.png" width="16" height="16">
-            local</div>"""
+                image1 = '''<div class="t-m">
+                    <img class="tile__favicon"
+                    src="favicon.png" width="16" height="16">
+                local</div>'''
             else:
                 url_video = jsonb['webpage_url']
-                image1 = """<div class="t-m">
-        <img class="tile__favicon" src="youtube.png" width="16" height="16">
-            YouTube</div>"""
+                image1 = '''<div class="t-m">
+                   <img class="tile__favicon"
+                   src="youtube-logo.png" width="16" height="16">
+                YouTube</div>'''
 
             jpg_gg = glob.glob(name + '*.jpg')
             if jpg_gg:
@@ -285,11 +287,13 @@ def html(rss_opts):
                     <p class="length">{jsonb['duration']}</p>
                 </div>
             </a>
+            <div class="tile__body">
             <p>{jsonb['title']}</p>
             <a href="{jsonb['uploader_url']}" rel="author">
                 <b>{jsonb['uploader']}</b></a>
             <p style="text-align:right">{jsonb['view_count']} vues</p>
             {image1}
+            </div>
         </div>
     </my-video-miniature>''')
             pass
@@ -305,6 +309,7 @@ def html(rss_opts):
     output = os.path.abspath(rss_opts['output'])
     copy('./templates/style.css', output)
     copy('./templates/favicon.png', output)
+    copy('./templates/youtube-logo.png', output)
 
 
 if __name__ == "__main__":
