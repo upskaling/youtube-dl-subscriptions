@@ -158,44 +158,52 @@ def rss(rss_opts):
             continue
 
         jsonb = rejson(jsonb[0])
-        LSdirname, LSbasename = os.path.split(name)  # id + .info.json
-        LSdirname = LSdirname.replace(
-            rss_opts['output'], '')  # fichier parents
+        LSdirname = os.path.dirname(name).replace(
+            rss_opts['output'], "")  # fichier parents
+
+        try:
+            jsonb['thumbnail'] = f'''{rss_opts['URL']}{glob.glob(
+                name + '*.jpg')[0].replace(rss_opts['output'], "")}'''
+        except IndexError:
+            pass
+
+        if jsonb['thumbnail'] is None:
+            poster = ''
+        else:
+            poster = f"{jsonb['thumbnail']}"
 
         if os.path.isfile(jsonb['_filename']):
             LSmimetypes = mimetypes.guess_type(jsonb['_filename'])[0]
             LSgetsize = str(os.path.getsize(jsonb['_filename']))  # getsize
             LSbasename = os.path.basename(jsonb['_filename'])  # id + .mp4
+            html_video = '<video width="100%" preload="none" controls ' \
+                f'''poster="{poster}">
+          <source src="{rss_opts['URL']}{LSdirname}/{LSbasename}" '''\
+            f'''type="{LSmimetypes}">
+            Votre navigateur ne permet pas de lire les vidéos HTML5.
+        </video>'''
             # date
-            LSgetctime = os.path.getmtime(jsonb['_filename'])
             LSgetctime = strftime(
-                "%a, %d %b %Y %H:%M:%S %z", localtime(LSgetctime))
+                "%a, %d %b %Y %H:%M:%S %z", localtime(
+                    os.path.getmtime(jsonb['_filename'])))
         else:
-            # ~continue
+            LSbasename = ''
+            html_video = \
+                f'''<a href="{jsonb['webpage_url']}" rel="author">
+        <img width="100%" loading="lazy" src={poster}>
+        </a>'''
+
             LSmimetypes = ''  # mimetypes
             LSgetsize = ''  # getsize
-            LSbasename = os.path.basename(name)  # id + .mp4
+            # date
             LSgetctime = ''
-
-        jpg_gg = glob.glob(name + '*.jpg')
-        if jpg_gg:
-            jsonb['thumbnail'] = jpg_gg[0].replace(rss_opts['output'], "")
-
-        if jsonb['thumbnail'] is None:
-            poster = ''
-        else:
-            poster = f"poster=\"{rss_opts['URL']}/{jsonb['thumbnail']}\""
 
         fe = fg.add_entry()
         fe.title(jsonb['title'])
         fe.link(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         fe.guid(f"{rss_opts['URL']}{LSdirname}/{LSbasename}")
         fe.description(
-            f"""<video width="100%" preload="metadata" controls {poster}>
-        <source src="{rss_opts['URL']}{LSdirname}/{LSbasename}" """
-            f"""type="{LSmimetypes}">
-        Votre navigateur ne permet pas de lire les vidéos HTML5.
-        </video><br>
+            f"""{html_video}<br>
         <a title="{jsonb['title']}" href="{jsonb['webpage_url']}">"""
             f"""{jsonb['title']}</a><br>
         <p>{jsonb['view_count']} vues</p>
@@ -270,9 +278,11 @@ def html(rss_opts):
                    src="youtube-logo.png" width="16" height="16">
                 YouTube</div>'''
 
-            jpg_gg = glob.glob(name + '*.jpg')
-            if jpg_gg:
-                jsonb['thumbnail'] = jpg_gg[0].replace(rss_opts['output'], "")
+            try:
+                jsonb['thumbnail'] = glob.glob(
+                    name + '*.jpg')[0].replace(rss_opts['output'], "")
+            except IndexError:
+                pass
 
             if jsonb['thumbnail'] is None:
                 poster = ''
